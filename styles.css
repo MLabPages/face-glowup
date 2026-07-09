@@ -76,6 +76,14 @@ h1 {
 
 .preview canvas { transform: none; } /* 解析結果は正像で表示 */
 
+#overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 .placeholder { text-align: center; color: var(--muted); padding: 24px; }
 .ph-icon { font-size: 2.4rem; margin-bottom: 6px; }
 
@@ -109,6 +117,7 @@ h1 {
 }
 .btn.ghost { background: transparent; color: var(--muted); }
 .btn.file { display: inline-flex; align-items: center; }
+.btn.small { padding: 6px 12px; font-size: 0.82rem; }
 
 .status {
   text-align: center;
@@ -133,6 +142,15 @@ h1 {
 .result h3 { margin: 22px 0 10px; font-size: 1.05rem; }
 .disclaimer { color: var(--muted); font-size: 0.88rem; margin: 0 0 16px; }
 
+.tips-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 22px 0 10px;
+}
+.tips-head h3 { margin: 0; }
+
 .cards { display: grid; gap: 10px; }
 .card {
   background: var(--panel-2);
@@ -146,14 +164,53 @@ h1 {
 
 .tips { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .tips li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: 10px;
   padding: 12px 14px;
   font-size: 0.94rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .tips li b { color: var(--good); }
+.tips li[data-num] { cursor: pointer; }
+.tips li[data-num]:hover { border-color: var(--accent); }
+.tips li.selected {
+  background: rgba(124, 196, 255, 0.14);
+  border-color: var(--accent);
+}
+.tips li .tip-text { flex: 1; }
+
+.tip-num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0d1017;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.tip-chip-all {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
 
 .foot { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 28px; }
 

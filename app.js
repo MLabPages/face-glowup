@@ -6,14 +6,19 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs";
 
 const els = {
+  stage: document.getElementById("stage"),
   video: document.getElementById("video"),
   canvas: document.getElementById("canvas"),
+  overlay: document.getElementById("overlay"),
   placeholder: document.getElementById("placeholder"),
   startCam: document.getElementById("startCam"),
   shoot: document.getElementById("shoot"),
   stopCam: document.getElementById("stopCam"),
   file: document.getElementById("file"),
   retry: document.getElementById("retry"),
+  savePhoto: document.getElementById("savePhoto"),
+  sharePhoto: document.getElementById("sharePhoto"),
+  toggleMarks: document.getElementById("toggleMarks"),
   status: document.getElementById("status"),
   result: document.getElementById("result"),
   impression: document.getElementById("impression"),
@@ -22,6 +27,13 @@ const els = {
 
 let landmarker = null;
 let stream = null;
+
+// ---- ヒントの番号印(overlay)関連の状態 ----
+// list: [{ num, points: [{x,y}, ...] }] 写真上に描く印のデータ(番号ありのヒントのみ)
+// faceW: バッジの大きさを決めるための顔の幅(px)
+let markData = { list: [], faceW: 0, faceBox: null };
+let highlightNum = null; // クリックで強調中のヒント番号(nullなら強調なし)
+let marksVisible = true; // 印の表示/非表示トグルの状態
 
 function setStatus(msg) {
   els.status.textContent = msg || "";
@@ -123,6 +135,7 @@ function showCanvas() {
   stopCamera();
   els.placeholder.hidden = true;
   els.canvas.hidden = false;
+  els.overlay.hidden = false;
   els.startCam.hidden = true;
   els.shoot.hidden = true;
   els.stopCam.hidden = true;
@@ -131,10 +144,16 @@ function showCanvas() {
 
 function resetToStart() {
   els.canvas.hidden = true;
+  els.overlay.hidden = true;
   els.retry.hidden = true;
+  els.savePhoto.hidden = true;
+  els.sharePhoto.hidden = true;
   els.result.hidden = true;
   els.placeholder.hidden = false;
   els.startCam.hidden = false;
+  clearOverlay();
+  markData = { list: [], faceW: 0, faceBox: null };
+  highlightNum = null;
   setStatus("準備完了。カメラを起動するか、写真を選んでください。");
 }
 
@@ -145,6 +164,9 @@ function runAnalysis(source, w, h) {
     return;
   }
   setStatus("解析中…");
+  // 再解析時は前回の印・強調状態をいったんクリアしておく
+  clearOverlay();
+  highlightNum = null;
   let res;
   try {
     res = landmarker.detect(source);
@@ -161,7 +183,7 @@ function runAnalysis(source, w, h) {
   const metrics = computeMetrics(lm, w, h);
   const brightness = sampleBrightness(source, lm, w, h);
   metrics.brightness = brightness;
-  renderResult(metrics);
+  renderResult(metrics, lm, w, h);
   setStatus("解析が完了しました。");
 }
 
@@ -230,17 +252,35 @@ function sampleBrightness(source, lm, w, h) {
 }
 
 // ---- 結果表示 ----
-function renderResult(m) {
+// tips は { html, anchors, label } の配列。anchors は写真上のピクセル座標の配列(番号印の位置)、
+// 写真全体に関する助言は anchors: null とする。label は写真上のバッジ横に描く短縮版の文言
+// (番号ありのヒントのみ)。
+function renderResult(m, lm, w, h) {
+  const P = (i) => ({ x: lm[i].x * w, y: lm[i].y * h });
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const faceH = dist(P(10), P(152));
+  const faceW = dist(P(234), P(454));
+  const faceBox = makeFaceBox(lm, w, h, faceW, faceH);
+  const foreheadAnchor = [{ x: P(10).x, y: P(10).y - faceH * 0.06 }]; // 額の少し上
+
   const impressions = [];
   const tips = [];
 
   // 顔の縦横比
   if (m.ratio >= 1.45) {
     impressions.push(["輪郭の傾向", "やや面長・縦のライン", "縦長は落ち着いた大人の印象になりやすいです。"]);
-    tips.push("<b>前髪・分け目</b>で縦の余白を少し埋めると、バランスよく見えます。前髪を横に流す/やや厚めにするのが好相性です。");
+    tips.push({
+      html: "<b>前髪・分け目</b>で縦の余白を少し埋めると、バランスよく見えます。前髪を横に流す/やや厚めにするのが好相性です。",
+      anchors: foreheadAnchor,
+      label: "前髪で縦をカバー",
+    });
   } else if (m.ratio <= 1.28) {
     impressions.push(["輪郭の傾向", "やや丸み・横のライン", "丸みは親しみやすく若々しい印象になりやすいです。"]);
-    tips.push("<b>トップにボリューム</b>を出す髪型や、縦を意識したチークで、すっきりした印象を足せます。");
+    tips.push({
+      html: "<b>トップにボリューム</b>を出す髪型や、縦を意識したチークで、すっきりした印象を足せます。",
+      anchors: foreheadAnchor,
+      label: "トップに高さ",
+    });
   } else {
     impressions.push(["輪郭の傾向", "バランス型", "縦横のバランスが取れた輪郭です。"]);
   }
@@ -248,10 +288,18 @@ function renderResult(m) {
   // 目の間隔
   if (m.eyeSpacing >= 1.15) {
     impressions.push(["目の配置", "やや離れ気味", "おっとり・優しい印象になりやすい配置です。"]);
-    tips.push("<b>目頭側のアイメイク</b>(目頭切開ライン・目頭に濃さ)で中心に寄せると、キリッと見えます。");
+    tips.push({
+      html: "<b>目頭側のアイメイク</b>(目頭切開ライン・目頭に濃さ)で中心に寄せると、キリッと見えます。",
+      anchors: [P(133), P(362)],
+      label: "目頭に濃さ",
+    });
   } else if (m.eyeSpacing <= 0.9) {
     impressions.push(["目の配置", "やや寄り気味", "意志的で華やかな印象になりやすい配置です。"]);
-    tips.push("<b>目尻側を強調</b>(目尻に向けてアイラインを伸ばす)すると、横幅が出て抜け感が生まれます。");
+    tips.push({
+      html: "<b>目尻側を強調</b>(目尻に向けてアイラインを伸ばす)すると、横幅が出て抜け感が生まれます。",
+      anchors: [P(33), P(263)],
+      label: "目尻を強調",
+    });
   } else {
     impressions.push(["目の配置", "標準的", "目と目の間隔はバランスの良い配置です。"]);
   }
@@ -259,7 +307,11 @@ function renderResult(m) {
   // 眉と目の距離
   if (m.browGapRatio >= 0.075) {
     impressions.push(["眉と目の距離", "やや離れ気味", "離れていると柔らかい・幼い印象になりやすいです。"]);
-    tips.push("<b>眉を少し下げる/太めに整える</b>と目と眉が近づき、顔が引き締まって見えます。垢抜けの効果が出やすいポイントです。");
+    tips.push({
+      html: "<b>眉を少し下げる/太めに整える</b>と目と眉が近づき、顔が引き締まって見えます。垢抜けの効果が出やすいポイントです。",
+      anchors: [P(105), P(334)],
+      label: "眉を太めに",
+    });
   } else if (m.browGapRatio <= 0.045) {
     impressions.push(["眉と目の距離", "やや近い", "近いと彫りが深く大人っぽい印象になりやすいです。"]);
   } else {
@@ -268,24 +320,41 @@ function renderResult(m) {
 
   // 眉の角度
   if (m.browAngle <= 2) {
-    tips.push("<b>眉尻を少し上げて</b>アーチをつけると、顔の余白が締まって洗練された印象になります(平行眉→やや角度)。");
+    tips.push({
+      html: "<b>眉尻を少し上げて</b>アーチをつけると、顔の余白が締まって洗練された印象になります(平行眉→やや角度)。",
+      anchors: [P(107), P(336)],
+      label: "眉尻を上げる",
+    });
   } else if (m.browAngle >= 12) {
-    tips.push("<b>眉山をなだらかに</b>すると、きつさが和らいで今っぽい柔らかさが出ます。");
+    tips.push({
+      html: "<b>眉山をなだらかに</b>すると、きつさが和らいで今っぽい柔らかさが出ます。",
+      anchors: [P(105), P(334)],
+      label: "眉山なだらかに",
+    });
   }
 
   // 左右対称性(誰でも多少ある。前向きに)
   if (m.symDiff >= 0.04) {
-    tips.push("<b>撮影の角度</b>を左右で試すと、写りが安定します。少しあごを引き、正面よりわずかに角度をつけると自然です(左右差は誰にでもあるので気にしすぎなくて大丈夫)。");
+    tips.push({
+      html: "<b>撮影の角度</b>を左右で試すと、写りが安定します。少しあごを引き、正面よりわずかに角度をつけると自然です(左右差は誰にでもあるので気にしすぎなくて大丈夫)。",
+      anchors: null,
+    });
   }
 
   // 明るさ(写真の撮り方の助言)
   if (m.brightness != null) {
     if (m.brightness < 0.35) {
       impressions.push(["写真の明るさ", "やや暗め", "光が足りないと垢抜けて見えにくくなります。"]);
-      tips.push("<b>光を正面から</b>:窓の方を向く、または明るい壁の前で撮ると、肌が均一に明るく写り印象が上がります。");
+      tips.push({
+        html: "<b>光を正面から</b>:窓の方を向く、または明るい壁の前で撮ると、肌が均一に明るく写り印象が上がります。",
+        anchors: null,
+      });
     } else if (m.brightness > 0.85) {
       impressions.push(["写真の明るさ", "やや明るすぎ", "白飛びすると立体感が失われます。"]);
-      tips.push("<b>光を少し弱める</b>:直射やライト正面を避けると、顔の立体感が出ます。");
+      tips.push({
+        html: "<b>光を少し弱める</b>:直射やライト正面を避けると、顔の立体感が出ます。",
+        anchors: null,
+      });
     } else {
       impressions.push(["写真の明るさ", "良好", "明るさは垢抜けて見えやすい範囲です。"]);
     }
@@ -293,11 +362,40 @@ function renderResult(m) {
 
   // 口幅(表情の提案)
   if (m.mouthRatio < 0.36) {
-    tips.push("<b>軽い笑顔</b>(口角を少し上げる)で写ると、表情が明るく親しみやすい印象になります。");
+    tips.push({
+      html: "<b>軽い笑顔</b>(口角を少し上げる)で写ると、表情が明るく親しみやすい印象になります。",
+      anchors: [P(61), P(291)],
+      label: "口角を上げて",
+    });
   }
 
   // 共通の締めヒント
-  tips.push("<b>清潔感の土台</b>:眉を整える・前髪の生え際を軽くする・肌の保湿の3つは、どんな顔立ちでも垢抜けに効きます。");
+  tips.push({
+    html: "<b>清潔感の土台</b>:眉を整える・前髪の生え際を軽くする・肌の保湿の3つは、どんな顔立ちでも垢抜けに効きます。",
+    anchors: null,
+  });
+
+  // anchors を持つヒントだけに表示順で番号を振る
+  let num = 0;
+  const numberedTips = tips.map((t) => {
+    if (t.anchors) {
+      num += 1;
+      return { ...t, num };
+    }
+    return { ...t, num: null };
+  });
+
+  // 写真上の印(overlay)用データを更新
+  markData = {
+    list: numberedTips
+      .filter((t) => t.anchors)
+      .map((t) => ({ num: t.num, points: t.anchors, label: t.label })),
+    faceW,
+    faceBox,
+  };
+  els.overlay.width = w;
+  els.overlay.height = h;
+  drawMarkers(null);
 
   // 描画
   els.impression.innerHTML = impressions
@@ -306,9 +404,327 @@ function renderResult(m) {
         `<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`
     )
     .join("");
-  els.tips.innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
+  els.tips.innerHTML = numberedTips
+    .map((t) => {
+      const chip =
+        t.num != null
+          ? `<span class="tip-num">${t.num}</span>`
+          : `<span class="tip-chip-all">全体</span>`;
+      const dataAttr = t.num != null ? ` data-num="${t.num}"` : "";
+      return `<li${dataAttr}>${chip}<span class="tip-text">${t.html}</span></li>`;
+    })
+    .join("");
   els.result.hidden = false;
-  els.result.scrollIntoView({ behavior: "smooth", block: "start" });
+  els.savePhoto.hidden = false;
+  // 共有ボタンは共有が使える環境のみ表示(PCブラウザ等では非対応のため自動で隠す)
+  els.sharePhoto.hidden = !(
+    navigator.share &&
+    navigator.canShare &&
+    navigator.canShare({ files: [new File([""], "t.png", { type: "image/png" })] })
+  );
+  els.stage.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---- 写真上の番号印(overlay)----
+function clearOverlay() {
+  if (!els.overlay.width || !els.overlay.height) return;
+  const ctx = els.overlay.getContext("2d");
+  ctx.clearRect(0, 0, els.overlay.width, els.overlay.height);
+}
+
+// overlay に印を描く。highlightNum を指定すると、その番号だけ通常表示+拡大、他は薄く表示する
+function drawMarkers(highlightNumArg) {
+  clearOverlay();
+  if (!marksVisible || markData.list.length === 0) return;
+  drawMarkersTo(els.overlay.getContext("2d"), highlightNumArg);
+}
+
+// 角丸の矩形パスを作る(ラベルのピル描画用)
+function roundRectPath(ctx, x, y, w, h, radius) {
+  const r = Math.min(radius, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function clamp(n, min, max) {
+  return Math.min(Math.max(n, min), max);
+}
+
+function averagePoint(points) {
+  const total = points.reduce(
+    (acc, pt) => ({ x: acc.x + pt.x, y: acc.y + pt.y }),
+    { x: 0, y: 0 }
+  );
+  return { x: total.x / points.length, y: total.y / points.length };
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function makeFaceBox(lm, w, h, faceW, faceH) {
+  const P = (i) => ({ x: lm[i].x * w, y: lm[i].y * h });
+  const top = P(10);
+  const chin = P(152);
+  const left = P(234);
+  const right = P(454);
+  const padX = faceW * 0.08;
+  const padY = faceH * 0.06;
+  const x1 = Math.min(left.x, right.x) - padX;
+  const x2 = Math.max(left.x, right.x) + padX;
+  const y1 = top.y - padY;
+  const y2 = chin.y + padY;
+  return {
+    x: clamp(x1, 0, w),
+    y: clamp(y1, 0, h),
+    w: clamp(x2, 0, w) - clamp(x1, 0, w),
+    h: clamp(y2, 0, h) - clamp(y1, 0, h),
+  };
+}
+
+function nudgeCallout(rect, axis, faceBox, placedLabels, canvasW, canvasH, edge) {
+  const step = axis === "y" ? rect.h + 5 : rect.w + 5;
+  const offsets = [0, -step, step, -step * 2, step * 2, -step * 3, step * 3];
+  for (const offset of offsets) {
+    const next = { ...rect };
+    if (axis === "y") {
+      next.y = clamp(rect.y + offset, edge, canvasH - rect.h - edge);
+    } else {
+      next.x = clamp(rect.x + offset, edge, canvasW - rect.w - edge);
+    }
+    if (rectsOverlap(next, faceBox)) continue;
+    if (placedLabels.some((p) => rectsOverlap(next, p))) continue;
+    return next;
+  }
+  return null;
+}
+
+function placeCallout(target, pillW, pillH, faceBox, placedLabels, canvasW, canvasH, gap, edge) {
+  const faceCenterX = faceBox.x + faceBox.w / 2;
+  const faceCenterY = faceBox.y + faceBox.h / 2;
+  const preferRight = target.x >= faceCenterX;
+  const preferBottom = target.y >= faceCenterY;
+  const candidates = [
+    {
+      side: "right",
+      axis: "y",
+      x: faceBox.x + faceBox.w + gap,
+      y: target.y - pillH / 2,
+      preferred: preferRight,
+    },
+    {
+      side: "left",
+      axis: "y",
+      x: faceBox.x - gap - pillW,
+      y: target.y - pillH / 2,
+      preferred: !preferRight,
+    },
+    {
+      side: "bottom",
+      axis: "x",
+      x: target.x - pillW / 2,
+      y: faceBox.y + faceBox.h + gap,
+      preferred: preferBottom,
+    },
+    {
+      side: "top",
+      axis: "x",
+      x: target.x - pillW / 2,
+      y: faceBox.y - gap - pillH,
+      preferred: !preferBottom,
+    },
+  ];
+
+  const valid = candidates
+    .map((candidate) => {
+      const rect = {
+        side: candidate.side,
+        axis: candidate.axis,
+        x: clamp(candidate.x, edge, canvasW - pillW - edge),
+        y: clamp(candidate.y, edge, canvasH - pillH - edge),
+        w: pillW,
+        h: pillH,
+      };
+      if (rectsOverlap(rect, faceBox)) return null;
+      const nudged = nudgeCallout(rect, candidate.axis, faceBox, placedLabels, canvasW, canvasH, edge);
+      if (!nudged) return null;
+      const dx = nudged.x + pillW / 2 - target.x;
+      const dy = nudged.y + pillH / 2 - target.y;
+      const overlapPenalty = placedLabels.some((p) => rectsOverlap(nudged, p)) ? 10000 : 0;
+      return {
+        ...nudged,
+        side: candidate.side,
+        score: Math.hypot(dx, dy) + overlapPenalty + (candidate.preferred ? 0 : 80),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score);
+
+  if (valid.length > 0) return valid[0];
+
+  // 顔まわりの余白が極端に少ない写真では、文字を顔に重ねないことを優先して非表示にする。
+  return null;
+}
+
+// マーカー群を指定の ctx に描く(overlay 描画と保存用の焼き込みで共用)
+function drawMarkersTo(ctx, highlightNumArg) {
+  if (markData.list.length === 0) return;
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#7cc4ff";
+  const baseR = Math.min(Math.max(markData.faceW * 0.05, 12), 26);
+  const faceBox =
+    markData.faceBox || { x: ctx.canvas.width * 0.22, y: ctx.canvas.height * 0.12, w: ctx.canvas.width * 0.56, h: ctx.canvas.height * 0.68 };
+  const edge = Math.max(6, baseR * 0.45);
+  const gap = Math.max(10, baseR * 0.8);
+  const placedLabels = []; // 描いたラベルの矩形(重なり回避用)
+
+  markData.list.forEach((entry) => {
+    const isHighlighted = highlightNumArg != null && highlightNumArg === entry.num;
+    const isDimmed = highlightNumArg != null && !isHighlighted;
+    const r = isHighlighted ? baseR * 1.15 : baseR;
+    const target = averagePoint(entry.points);
+
+    ctx.save();
+    ctx.globalAlpha = isDimmed ? 0.35 : 1;
+
+    entry.points.forEach((pt) => {
+      // 対象位置は小さな点だけにして、顔に文字や大きなバッジを重ねない。
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, isHighlighted ? 4 : 3, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+    });
+
+    // 短縮版ラベルは顔の外側の余白へ置き、細い線で対象位置へつなぐ。
+    if (entry.label) {
+      const canvasW = ctx.canvas.width;
+      const canvasH = ctx.canvas.height;
+      const fontSize = Math.max(11, r * 0.85);
+      ctx.font = `bold ${Math.round(fontSize)}px system-ui, sans-serif`;
+      const label = `${entry.num}. ${entry.label}`;
+      const padX = fontSize * 0.6;
+      const pillW = ctx.measureText(label).width + padX * 2;
+      const pillH = fontSize * 1.7;
+      const rect = placeCallout(target, pillW, pillH, faceBox, placedLabels, canvasW, canvasH, gap, edge);
+      if (!rect) {
+        ctx.restore();
+        return;
+      }
+      placedLabels.push(rect);
+
+      const labelAnchor = {
+        x: clamp(target.x, rect.x + 8, rect.x + rect.w - 8),
+        y: clamp(target.y, rect.y + 8, rect.y + rect.h - 8),
+      };
+      if (rect.side === "left") labelAnchor.x = rect.x + rect.w;
+      if (rect.side === "right") labelAnchor.x = rect.x;
+      if (rect.side === "top") labelAnchor.y = rect.y + rect.h;
+      if (rect.side === "bottom") labelAnchor.y = rect.y;
+
+      // 対象位置から顔外のコメントへ伸びる線。
+      ctx.beginPath();
+      ctx.moveTo(target.x, target.y);
+      ctx.lineTo(labelAnchor.x, labelAnchor.y);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.78)";
+      ctx.lineWidth = isHighlighted ? 2.5 : 1.7;
+      ctx.stroke();
+
+      // ピル(角丸背景)+ 白の太字テキスト
+      ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+      ctx.shadowBlur = 6;
+      roundRectPath(ctx, rect.x, rect.y, rect.w, rect.h, rect.h / 2);
+      ctx.fillStyle = "rgba(13, 16, 23, 0.84)";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 1);
+    }
+
+    ctx.restore();
+  });
+}
+
+// 印つき画像(#canvas + 全マーカー)を一時 canvas に合成して返す(保存・共有で共用)。
+// 強調・非表示トグルの状態に関係なく、常に全部の印を通常状態で焼き込む。
+function composeAnnotatedCanvas() {
+  const w = els.canvas.width;
+  const h = els.canvas.height;
+  if (!w || !h) return null;
+  const temp = document.createElement("canvas");
+  temp.width = w;
+  temp.height = h;
+  const tempCtx = temp.getContext("2d");
+  tempCtx.drawImage(els.canvas, 0, 0, w, h);
+  drawMarkersTo(tempCtx, null);
+  return temp;
+}
+
+// ファイル名: akanuke-check_YYYYMMDD-HHMMSS.png(現在時刻)
+function annotatedFileName() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    `akanuke-check_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
+  );
+}
+
+// 印つき写真を PNG としてダウンロード保存する。
+// ダウンロードは本人の端末内への保存なので「写真は端末外に送らない」方針と両立する。
+function saveAnnotatedPhoto() {
+  const temp = composeAnnotatedCanvas();
+  if (!temp) return;
+
+  temp.toBlob((blob) => {
+    if (!blob) {
+      setStatus("写真の保存に失敗しました。もう一度お試しください。");
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = annotatedFileName();
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus("印つき写真を保存しました(端末の中だけに保存されます)。");
+  }, "image/png");
+}
+
+// 印つき写真を Web Share API で共有する(共有先は本人が選ぶ)。
+function shareAnnotatedPhoto() {
+  const temp = composeAnnotatedCanvas();
+  if (!temp) return;
+
+  // toBlob の await を挟むと iOS Safari でユーザー操作の有効期限が切れて share が
+  // 失敗することがあるため、同期処理で File を作ってから navigator.share を呼ぶ
+  const dataUrl = temp.toDataURL("image/png");
+  const bin = atob(dataUrl.split(",")[1]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const file = new File([bytes], annotatedFileName(), { type: "image/png" });
+
+  navigator.share({ files: [file], title: "垢抜けチェック" }).catch((e) => {
+    // ユーザーが共有メニューを閉じただけ(AbortError)の場合は何もしない
+    if (e && e.name === "AbortError") return;
+    setStatus("共有できませんでした。「印つき写真を保存」をお使いください。");
+  });
 }
 
 // ---- イベント ----
@@ -320,10 +736,36 @@ els.stopCam.addEventListener("click", () => {
   resetToStart();
 });
 els.retry.addEventListener("click", resetToStart);
+els.savePhoto.addEventListener("click", saveAnnotatedPhoto);
+els.sharePhoto.addEventListener("click", shareAnnotatedPhoto);
 els.file.addEventListener("change", (e) => {
   const f = e.target.files && e.target.files[0];
   if (f) analyzeFromFile(f);
   e.target.value = ""; // 同じファイルを再選択できるように
 });
 
+// ヒント項目クリックで、その番号の印だけ強調(もう一度クリックで解除)
+els.tips.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-num]");
+  if (!li) return; // 「全体」向けのヒントはクリックしても何もしない
+  const num = Number(li.dataset.num);
+  highlightNum = highlightNum === num ? null : num;
+  els.tips.querySelectorAll("li[data-num]").forEach((item) => {
+    item.classList.toggle("selected", Number(item.dataset.num) === highlightNum);
+  });
+  drawMarkers(highlightNum);
+});
+
+// 印の表示/非表示トグル
+els.toggleMarks.addEventListener("click", () => {
+  marksVisible = !marksVisible;
+  els.toggleMarks.textContent = marksVisible ? "印を消す" : "印を表示";
+  drawMarkers(highlightNum);
+});
+
 initModel();
+
+// 動作確認用フック: URLに ?debug が付いている場合のみ、外部から解析を呼び出せるようにする
+if (new URLSearchParams(location.search).has("debug")) {
+  window.__faceGlowup = { analyzeFromFile };
+}
