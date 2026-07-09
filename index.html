@@ -1,14 +1,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>垢抜けチェック(端末内解析)</title>
+<title>垢抜けレシピ(端末内解析)</title>
 <link rel="stylesheet" href="styles.css" />
 
 <main class="wrap">
   <header class="head">
-    <h1>垢抜けチェック</h1>
+    <h1>垢抜けレシピ</h1>
     <p class="lead">
-      顔を写すと、印象の特徴と「垢抜けのヒント」を提示します。<br />
-      <strong>写真は端末の外に一切送りません。</strong>解析はすべてブラウザ内で完結します。
+      写真から、前髪・眉・光・表情の小さな整え方を提案します。<br />
+      <strong>写真は端末の外に送りません。</strong>解析はブラウザ内で完結します。
     </p>
   </header>
 
@@ -34,7 +34,7 @@
       </label>
 
       <button id="retry" class="btn ghost" hidden>もう一度</button>
-      <button id="savePhoto" class="btn" hidden>印つき写真を保存</button>
+      <button id="savePhoto" class="btn" hidden>写真を保存</button>
       <button id="sharePhoto" class="btn" hidden>共有</button>
     </div>
 
@@ -42,17 +42,15 @@
   </section>
 
   <section class="result" id="result" hidden>
-    <h2>解析結果</h2>
+    <h2>あなたの垢抜けレシピ</h2>
     <p class="disclaimer">
-      これは顔のパーツ位置から出した目安です。良し悪しではなく「印象の傾向」と、
-      すぐ試せる工夫を提案します。
+      採点ではなく、今の雰囲気を活かすための小さな提案です。気になるものだけ試してください。
     </p>
 
     <div class="cards" id="impression"></div>
 
     <div class="tips-head">
-      <h3>垢抜けのヒント</h3>
-      <button id="toggleMarks" class="btn ghost small">印を消す</button>
+      <h3>今日試すなら</h3>
     </div>
     <ul class="tips" id="tips"></ul>
   </section>

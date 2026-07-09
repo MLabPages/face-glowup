@@ -1,4 +1,4 @@
-// 垢抜けチェック — 端末内解析のみ。写真は外部送信しない。
+// 垢抜けレシピ — 端末内解析のみ。写真は外部送信しない。
 // 顔ランドマーク検出に MediaPipe Tasks Vision を使用(モデルはCDNから読み込み)。
 import {
   FaceLandmarker,
@@ -148,7 +148,7 @@ function showCanvas() {
   setPreviewAspect(els.canvas.width, els.canvas.height);
   els.placeholder.hidden = true;
   els.canvas.hidden = false;
-  els.overlay.hidden = false;
+  els.overlay.hidden = true;
   els.startCam.hidden = true;
   els.shoot.hidden = true;
   els.stopCam.hidden = true;
@@ -265,168 +265,192 @@ function sampleBrightness(source, lm, w, h) {
   }
 }
 
+function makeRecipe(category, title, body, steps, accent = "") {
+  return { category, title, body, steps, accent };
+}
+
 // ---- 結果表示 ----
-// tips は { html, anchors, label } の配列。anchors は写真上のピクセル座標の配列(番号印の位置)、
-// 写真全体に関する助言は anchors: null とする。label は写真上のバッジ横に描く短縮版の文言
-// (番号ありのヒントのみ)。
 function renderResult(m, lm, w, h) {
-  const P = (i) => ({ x: lm[i].x * w, y: lm[i].y * h });
-  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-  const faceH = dist(P(10), P(152));
-  const faceW = dist(P(234), P(454));
-  const faceBox = makeFaceBox(lm, w, h, faceW, faceH);
-  const foreheadAnchor = [{ x: P(10).x, y: P(10).y - faceH * 0.06 }]; // 額の少し上
-
   const impressions = [];
-  const tips = [];
+  const recipes = [];
 
-  // 顔の縦横比
   if (m.ratio >= 1.45) {
-    impressions.push(["輪郭の傾向", "やや面長・縦のライン", "縦長は落ち着いた大人の印象になりやすいです。"]);
-    tips.push({
-      html: "<b>前髪・分け目</b>で縦の余白を少し埋めると、バランスよく見えます。前髪を横に流す/やや厚めにするのが好相性です。",
-      anchors: foreheadAnchor,
-      label: "前髪で縦をカバー",
-    });
+    impressions.push(["雰囲気", "大人っぽくすっきり", "縦ラインがきれいに出やすいタイプです。"]);
+    recipes.push(
+      makeRecipe(
+        "ヘア",
+        "前髪に少し横のニュアンスを足す",
+        "縦のきれいさは残しつつ、顔まわりにやわらかさが出ます。",
+        ["前髪はまっすぐ下ろしすぎず、毛先だけ横に流す", "顔まわりの髪を頬骨あたりで軽く外へ逃がす", "分け目はきっちり作らず、根元を少しふんわりさせる"],
+        "抜け感"
+      )
+    );
   } else if (m.ratio <= 1.28) {
-    impressions.push(["輪郭の傾向", "やや丸み・横のライン", "丸みは親しみやすく若々しい印象になりやすいです。"]);
-    tips.push({
-      html: "<b>トップにボリューム</b>を出す髪型や、縦を意識したチークで、すっきりした印象を足せます。",
-      anchors: foreheadAnchor,
-      label: "トップに高さ",
-    });
+    impressions.push(["雰囲気", "やわらかく親しみやすい", "ふんわりした印象が出やすいタイプです。"]);
+    recipes.push(
+      makeRecipe(
+        "ヘア",
+        "トップと前髪に少し高さを出す",
+        "かわいらしさを活かしながら、すっきり見えるバランスに寄せられます。",
+        ["前髪の根元を軽く立ち上げる", "トップはぺたんとさせず、ドライヤーで空気を入れる", "チークは丸く広げず、頬の高い位置から斜めにぼかす"],
+        "小顔感"
+      )
+    );
   } else {
-    impressions.push(["輪郭の傾向", "バランス型", "縦横のバランスが取れた輪郭です。"]);
+    impressions.push(["雰囲気", "バランスが取りやすい", "髪型やメイクの幅を楽しみやすいタイプです。"]);
+    recipes.push(
+      makeRecipe(
+        "ヘア",
+        "顔まわりにひと束だけ動きを作る",
+        "大きく変えなくても、写真で見たときのこなれ感が出ます。",
+        ["耳前の毛を細く残す", "毛先は内巻きより少し外へ流す", "オイルは毛先だけに少量つける"],
+        "こなれ感"
+      )
+    );
   }
 
-  // 目の間隔
   if (m.eyeSpacing >= 1.15) {
-    impressions.push(["目の配置", "やや離れ気味", "おっとり・優しい印象になりやすい配置です。"]);
-    tips.push({
-      html: "<b>目頭側のアイメイク</b>(目頭切開ライン・目頭に濃さ)で中心に寄せると、キリッと見えます。",
-      anchors: [P(133), P(362)],
-      label: "目頭に濃さ",
-    });
+    recipes.push(
+      makeRecipe(
+        "アイメイク",
+        "目頭にほんの少しだけ明るさと締め色を足す",
+        "やさしい雰囲気はそのまま、視線の中心がすっと整います。",
+        ["目頭に細くハイライトを入れる", "上まぶた中央より内側に淡い締め色を重ねる", "アイラインは黒よりブラウンで細く入れる"],
+        "上品"
+      )
+    );
   } else if (m.eyeSpacing <= 0.9) {
-    impressions.push(["目の配置", "やや寄り気味", "意志的で華やかな印象になりやすい配置です。"]);
-    tips.push({
-      html: "<b>目尻側を強調</b>(目尻に向けてアイラインを伸ばす)すると、横幅が出て抜け感が生まれます。",
-      anchors: [P(33), P(263)],
-      label: "目尻を強調",
-    });
+    recipes.push(
+      makeRecipe(
+        "アイメイク",
+        "目尻側に余韻を作る",
+        "華やかさを活かしながら、抜け感のある目元に見せられます。",
+        ["アイラインは目尻だけ2mmほど伸ばす", "下まぶたの目尻側に淡い影色を置く", "まつ毛は中央より目尻を少し長めに整える"],
+        "抜け感"
+      )
+    );
   } else {
-    impressions.push(["目の配置", "標準的", "目と目の間隔はバランスの良い配置です。"]);
+    recipes.push(
+      makeRecipe(
+        "アイメイク",
+        "まぶた中央に光を集める",
+        "自然なバランスを活かして、写真で目元がきれいに見えます。",
+        ["黒目の上に細かいパールを少量置く", "締め色は目尻から薄くぼかす", "涙袋は影を濃くしすぎず、明るさだけ足す"],
+        "透明感"
+      )
+    );
   }
 
-  // 眉と目の距離
   if (m.browGapRatio >= 0.075) {
-    impressions.push(["眉と目の距離", "やや離れ気味", "離れていると柔らかい・幼い印象になりやすいです。"]);
-    tips.push({
-      html: "<b>眉を少し下げる/太めに整える</b>と目と眉が近づき、顔が引き締まって見えます。垢抜けの効果が出やすいポイントです。",
-      anchors: [P(105), P(334)],
-      label: "眉を太めに",
-    });
+    recipes.push(
+      makeRecipe(
+        "眉",
+        "眉下に少しだけ厚みを足す",
+        "目元がぼやけず、メイク感を強くしなくても洗練されて見えます。",
+        ["眉下ラインを1mmだけ描き足す", "眉頭はぼかして、眉尻は細く整える", "眉マスカラは髪色より少し明るめを選ぶ"],
+        "洗練"
+      )
+    );
   } else if (m.browGapRatio <= 0.045) {
-    impressions.push(["眉と目の距離", "やや近い", "近いと彫りが深く大人っぽい印象になりやすいです。"]);
+    recipes.push(
+      makeRecipe(
+        "眉",
+        "眉の上側をふわっと軽くする",
+        "目元の強さを活かしながら、今っぽい柔らかさが出ます。",
+        ["眉頭は立ち上げすぎず自然にとかす", "眉山を濃く描かず、パウダーで薄くつなぐ", "眉下のハイライトは控えめにする"],
+        "やわらか"
+      )
+    );
   } else {
-    impressions.push(["眉と目の距離", "標準的", "眉と目の距離はバランスが取れています。"]);
+    recipes.push(
+      makeRecipe(
+        "眉",
+        "眉尻だけ丁寧に整える",
+        "顔全体の清潔感が上がり、普段メイクでも完成度が出ます。",
+        ["眉尻は小鼻と目尻の延長線を目安にする", "足りない部分だけ細く描く", "最後にスクリューブラシで境目をぼかす"],
+        "清潔感"
+      )
+    );
   }
 
-  // 眉の角度
-  if (m.browAngle <= 2) {
-    tips.push({
-      html: "<b>眉尻を少し上げて</b>アーチをつけると、顔の余白が締まって洗練された印象になります(平行眉→やや角度)。",
-      anchors: [P(107), P(336)],
-      label: "眉尻を上げる",
-    });
-  } else if (m.browAngle >= 12) {
-    tips.push({
-      html: "<b>眉山をなだらかに</b>すると、きつさが和らいで今っぽい柔らかさが出ます。",
-      anchors: [P(105), P(334)],
-      label: "眉山なだらかに",
-    });
-  }
-
-  // 左右対称性(誰でも多少ある。前向きに)
-  if (m.symDiff >= 0.04) {
-    tips.push({
-      html: "<b>撮影の角度</b>を左右で試すと、写りが安定します。少しあごを引き、正面よりわずかに角度をつけると自然です(左右差は誰にでもあるので気にしすぎなくて大丈夫)。",
-      anchors: null,
-    });
-  }
-
-  // 明るさ(写真の撮り方の助言)
   if (m.brightness != null) {
     if (m.brightness < 0.35) {
-      impressions.push(["写真の明るさ", "やや暗め", "光が足りないと垢抜けて見えにくくなります。"]);
-      tips.push({
-        html: "<b>光を正面から</b>:窓の方を向く、または明るい壁の前で撮ると、肌が均一に明るく写り印象が上がります。",
-        anchors: null,
-      });
+      impressions.push(["写真映え", "光を足すとさらにきれい", "正面からのやわらかい光で肌の印象が上がります。"]);
+      recipes.push(
+        makeRecipe(
+          "撮影",
+          "窓の正面で肌の透明感を拾う",
+          "加工より先に光を整えると、ベースメイクも髪もきれいに見えます。",
+          ["窓から1mほど離れて正面を向く", "天井の強い影が出る場所は避ける", "白い壁や白い服をレフ板代わりにする"],
+          "透明感"
+        )
+      );
     } else if (m.brightness > 0.85) {
-      impressions.push(["写真の明るさ", "やや明るすぎ", "白飛びすると立体感が失われます。"]);
-      tips.push({
-        html: "<b>光を少し弱める</b>:直射やライト正面を避けると、顔の立体感が出ます。",
-        anchors: null,
-      });
+      impressions.push(["写真映え", "少し光をやわらげると上品", "立体感が残る光にするとメイクが映えます。"]);
+      recipes.push(
+        makeRecipe(
+          "撮影",
+          "直射を避けてふんわり明るく撮る",
+          "白飛びを抑えると、肌とリップの質感がきれいに残ります。",
+          ["窓から少し横にずれる", "画面をタップして明るさを少し下げる", "ツヤ系ハイライトは頬の高い位置だけにする"],
+          "上品ツヤ"
+        )
+      );
     } else {
-      impressions.push(["写真の明るさ", "良好", "明るさは垢抜けて見えやすい範囲です。"]);
+      impressions.push(["写真映え", "明るさはきれい", "今の光でも雰囲気が伝わりやすい状態です。"]);
     }
   }
 
-  // 口幅(表情の提案)
   if (m.mouthRatio < 0.36) {
-    tips.push({
-      html: "<b>軽い笑顔</b>(口角を少し上げる)で写ると、表情が明るく親しみやすい印象になります。",
-      anchors: [P(61), P(291)],
-      label: "口角を上げて",
-    });
+    recipes.push(
+      makeRecipe(
+        "表情",
+        "口角をほんの少しだけ上げる",
+        "表情を作り込みすぎず、親しみやすい明るさが出ます。",
+        ["息を軽く吐いてから撮る", "上の歯を見せすぎず、口角だけ上げる", "リップは中央にツヤを足す"],
+        "好印象"
+      )
+    );
   }
 
-  // 共通の締めヒント
-  tips.push({
-    html: "<b>清潔感の土台</b>:眉を整える・前髪の生え際を軽くする・肌の保湿の3つは、どんな顔立ちでも垢抜けに効きます。",
-    anchors: null,
-  });
+  recipes.push(
+    makeRecipe(
+      "仕上げ",
+      "眉・髪・肌のツヤを一か所ずつ整える",
+      "大きく変えるより、細部を少し整える方が自然に垢抜けて見えます。",
+      ["眉尻の余分な毛だけ整える", "前髪の生え際をコームで軽くとかす", "頬か唇のどちらか一方にツヤを足す"],
+      "清潔感"
+    )
+  );
 
-  // anchors を持つヒントだけに表示順で番号を振る
-  let num = 0;
-  const numberedTips = tips.map((t) => {
-    if (t.anchors) {
-      num += 1;
-      return { ...t, num };
-    }
-    return { ...t, num: null };
-  });
-
-  // 写真上の印(overlay)用データを更新
-  markData = {
-    list: numberedTips
-      .filter((t) => t.anchors)
-      .map((t) => ({ num: t.num, points: t.anchors, label: t.label })),
-    faceW,
-    faceBox,
-  };
+  markData = { list: [], faceW: 0, faceBox: null };
   els.overlay.width = w;
   els.overlay.height = h;
-  drawMarkers(null);
+  clearOverlay();
 
-  // 描画
   els.impression.innerHTML = impressions
     .map(
       ([k, v, n]) =>
-        `<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`
+        `<div class="card profile-card"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`
     )
     .join("");
-  els.tips.innerHTML = numberedTips
-    .map((t) => {
-      const chip =
-        t.num != null
-          ? `<span class="tip-num">${t.num}</span>`
-          : `<span class="tip-chip-all">全体</span>`;
-      const dataAttr = t.num != null ? ` data-num="${t.num}"` : "";
-      return `<li${dataAttr}>${chip}<span class="tip-text">${t.html}</span></li>`;
-    })
+  els.tips.innerHTML = recipes
+    .slice(0, 5)
+    .map(
+      (recipe, index) => `
+        <li class="recipe-card">
+          <div class="recipe-top">
+            <span class="recipe-number">${index + 1}</span>
+            <span class="recipe-category">${recipe.category}</span>
+            <span class="recipe-accent">${recipe.accent}</span>
+          </div>
+          <div class="recipe-title">${recipe.title}</div>
+          <p class="recipe-body">${recipe.body}</p>
+          <ul class="recipe-steps">
+            ${recipe.steps.map((step) => `<li>${step}</li>`).join("")}
+          </ul>
+        </li>`
+    )
     .join("");
   els.result.hidden = false;
   els.savePhoto.hidden = false;
@@ -675,8 +699,7 @@ function drawMarkersTo(ctx, highlightNumArg) {
   });
 }
 
-// 印つき画像(#canvas + 全マーカー)を一時 canvas に合成して返す(保存・共有で共用)。
-// 強調・非表示トグルの状態に関係なく、常に全部の印を通常状態で焼き込む。
+// 写真を一時 canvas に合成して返す(保存・共有で共用)。
 function composeAnnotatedCanvas() {
   const w = els.canvas.width;
   const h = els.canvas.height;
@@ -686,21 +709,20 @@ function composeAnnotatedCanvas() {
   temp.height = h;
   const tempCtx = temp.getContext("2d");
   tempCtx.drawImage(els.canvas, 0, 0, w, h);
-  drawMarkersTo(tempCtx, null);
   return temp;
 }
 
-// ファイル名: akanuke-check_YYYYMMDD-HHMMSS.png(現在時刻)
+// ファイル名: akanuke-recipe_YYYYMMDD-HHMMSS.png(現在時刻)
 function annotatedFileName() {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   return (
-    `akanuke-check_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `akanuke-recipe_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
     `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
   );
 }
 
-// 印つき写真を PNG としてダウンロード保存する。
+// 写真を PNG としてダウンロード保存する。
 // ダウンロードは本人の端末内への保存なので「写真は端末外に送らない」方針と両立する。
 function saveAnnotatedPhoto() {
   const temp = composeAnnotatedCanvas();
@@ -717,11 +739,11 @@ function saveAnnotatedPhoto() {
     a.download = annotatedFileName();
     a.click();
     URL.revokeObjectURL(url);
-    setStatus("印つき写真を保存しました(端末の中だけに保存されます)。");
+    setStatus("写真を保存しました(端末の中だけに保存されます)。");
   }, "image/png");
 }
 
-// 印つき写真を Web Share API で共有する(共有先は本人が選ぶ)。
+// 写真を Web Share API で共有する(共有先は本人が選ぶ)。
 function shareAnnotatedPhoto() {
   const temp = composeAnnotatedCanvas();
   if (!temp) return;
@@ -734,10 +756,10 @@ function shareAnnotatedPhoto() {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   const file = new File([bytes], annotatedFileName(), { type: "image/png" });
 
-  navigator.share({ files: [file], title: "垢抜けチェック" }).catch((e) => {
+  navigator.share({ files: [file], title: "垢抜けレシピ" }).catch((e) => {
     // ユーザーが共有メニューを閉じただけ(AbortError)の場合は何もしない
     if (e && e.name === "AbortError") return;
-    setStatus("共有できませんでした。「印つき写真を保存」をお使いください。");
+    setStatus("共有できませんでした。「写真を保存」をお使いください。");
   });
 }
 
@@ -767,13 +789,6 @@ els.tips.addEventListener("click", (e) => {
   els.tips.querySelectorAll("li[data-num]").forEach((item) => {
     item.classList.toggle("selected", Number(item.dataset.num) === highlightNum);
   });
-  drawMarkers(highlightNum);
-});
-
-// 印の表示/非表示トグル
-els.toggleMarks.addEventListener("click", () => {
-  marksVisible = !marksVisible;
-  els.toggleMarks.textContent = marksVisible ? "印を消す" : "印を表示";
   drawMarkers(highlightNum);
 });
 
