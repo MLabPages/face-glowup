@@ -7,6 +7,7 @@ import {
 
 const els = {
   stage: document.getElementById("stage"),
+  preview: document.getElementById("preview"),
   video: document.getElementById("video"),
   canvas: document.getElementById("canvas"),
   overlay: document.getElementById("overlay"),
@@ -34,6 +35,16 @@ let stream = null;
 let markData = { list: [], faceW: 0, faceBox: null };
 let highlightNum = null; // クリックで強調中のヒント番号(nullなら強調なし)
 let marksVisible = true; // 印の表示/非表示トグルの状態
+
+function setPreviewAspect(w, h) {
+  if (!w || !h) {
+    els.preview.style.removeProperty("--preview-ratio");
+    els.preview.style.removeProperty("--preview-ratio-number");
+    return;
+  }
+  els.preview.style.setProperty("--preview-ratio", `${w} / ${h}`);
+  els.preview.style.setProperty("--preview-ratio-number", String(w / h));
+}
 
 function setStatus(msg) {
   els.status.textContent = msg || "";
@@ -74,6 +85,7 @@ async function startCamera() {
     els.placeholder.hidden = true;
     els.video.hidden = false;
     els.canvas.hidden = true;
+    setPreviewAspect(null, null);
     els.startCam.hidden = true;
     els.shoot.hidden = false;
     els.stopCam.hidden = false;
@@ -133,6 +145,7 @@ function analyzeFromFile(fileObj) {
 
 function showCanvas() {
   stopCamera();
+  setPreviewAspect(els.canvas.width, els.canvas.height);
   els.placeholder.hidden = true;
   els.canvas.hidden = false;
   els.overlay.hidden = false;
@@ -143,6 +156,7 @@ function showCanvas() {
 }
 
 function resetToStart() {
+  setPreviewAspect(null, null);
   els.canvas.hidden = true;
   els.overlay.hidden = true;
   els.retry.hidden = true;
