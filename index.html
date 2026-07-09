@@ -1,0 +1,59 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>垢抜けチェック(端末内解析)</title>
+<link rel="stylesheet" href="styles.css" />
+
+<main class="wrap">
+  <header class="head">
+    <h1>垢抜けチェック</h1>
+    <p class="lead">
+      顔を写すと、印象の特徴と「垢抜けのヒント」を提示します。<br />
+      <strong>写真は端末の外に一切送りません。</strong>解析はすべてブラウザ内で完結します。
+    </p>
+  </header>
+
+  <section class="stage" id="stage">
+    <div class="preview" id="preview">
+      <video id="video" playsinline muted hidden></video>
+      <canvas id="canvas" hidden></canvas>
+      <div class="placeholder" id="placeholder">
+        <div class="ph-icon">📷</div>
+        <p>カメラを起動するか、写真を選んでください</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="startCam" class="btn primary">カメラを起動</button>
+      <button id="shoot" class="btn" hidden>この顔で解析</button>
+      <button id="stopCam" class="btn ghost" hidden>カメラを止める</button>
+
+      <label class="btn file">
+        写真を選ぶ
+        <input id="file" type="file" accept="image/*" hidden />
+      </label>
+
+      <button id="retry" class="btn ghost" hidden>もう一度</button>
+    </div>
+
+    <p class="status" id="status" role="status" aria-live="polite">準備中…モデルを読み込んでいます</p>
+  </section>
+
+  <section class="result" id="result" hidden>
+    <h2>解析結果</h2>
+    <p class="disclaimer">
+      これは顔のパーツ位置から出した目安です。良し悪しではなく「印象の傾向」と、
+      すぐ試せる工夫を提案します。
+    </p>
+
+    <div class="cards" id="impression"></div>
+
+    <h3>垢抜けのヒント</h3>
+    <ul class="tips" id="tips"></ul>
+  </section>
+
+  <footer class="foot">
+    <p>プライバシー方針:映像・写真は保存も送信もしません。数値特徴のみ端末内で計算します。</p>
+  </footer>
+</main>
+
+<script type="module" src="app.js"></script>
