@@ -18,6 +18,9 @@ const els = {
   result: document.getElementById("result"),
   resultTitle: document.getElementById("resultTitle"),
   resultBody: document.getElementById("resultBody"),
+  photoInsight: document.getElementById("photoInsight"),
+  insightTitle: document.getElementById("insightTitle"),
+  insightBody: document.getElementById("insightBody"),
   steps: document.getElementById("steps"),
   timeMeta: document.getElementById("timeMeta"),
   toolMeta: document.getElementById("toolMeta"),
@@ -27,6 +30,83 @@ const els = {
   finish: document.getElementById("finish"),
   done: document.getElementById("done"),
   restart: document.getElementById("restart"),
+};
+
+const faceAwareRecipes = {
+  hair: {
+    soft: {
+      title: "トップに、ひと息ぶん空気を入れる",
+      body: "輪郭のやわらかさはそのままに、髪の上側へ軽さをひとつ足します。",
+      steps: ["分け目の根元に指を入れる", "左右へ小さく揺らして空気を入れる", "顔まわりは触りすぎず、そこで終える"],
+    },
+    sleek: {
+      title: "顔まわりを、横へひと流し",
+      body: "すっきりした縦の流れを活かしながら、顔まわりにやわらかな動きを足します。",
+      steps: ["耳の前の毛を細くひと束取る", "毛先だけを外側へ流す", "少量のバームで動きを残す"],
+    },
+    smooth: {
+      title: "分け目を1cmだけ動かす",
+      body: "なめらかな輪郭を活かして、髪の入り口だけを少し新鮮にします。",
+      steps: ["今の分け目を指で取る", "好きな側へ1cmだけ動かす", "根元を軽くなじませて完成"],
+    },
+  },
+  brow: {
+    lifted: {
+      title: "眉尻を細く整えて、流れを活かす",
+      body: "すっと上向く眉の流れを消さず、終わりだけを軽く整えます。",
+      steps: ["眉を毛流れに沿ってとかす", "眉尻の足りないところを1、2本だけ描く", "境目を一度ぼかして終える"],
+    },
+    gentle: {
+      title: "眉を一度とかして、やわらかく整える",
+      body: "穏やかな眉の流れをそのまま活かす、描き足しすぎない方法です。",
+      steps: ["眉頭から中央までを斜め上へとかす", "眉尻は横へ自然に流す", "色は足りない部分にだけ置く"],
+    },
+    natural: {
+      title: "眉尻だけ、30秒整える",
+      body: "自然な眉の流れを活かして、目に入りやすい終わりだけを丁寧にします。",
+      steps: ["スクリューブラシで全体をとかす", "眉尻を1、2本だけ描き足す", "左右差は追いかけずに終える"],
+    },
+  },
+  color: {
+    open: {
+      title: "目頭に、小さな光をひとつ",
+      body: "やさしく広がる目元の雰囲気を活かし、視線の中心にごく小さな光を足します。",
+      steps: ["細かいパールをほんの少し取る", "目頭へ点のように置く", "広げすぎず、その一点で終える"],
+    },
+    focused: {
+      title: "目尻に、好きな色を短くひと筋",
+      body: "視線を引き込む目元を活かして、外側に少しだけ色の余韻を作ります。",
+      steps: ["今日うれしいと思える色を選ぶ", "目尻へ細く短く置く", "ほかはいつものメイクのままにする"],
+    },
+    clear: {
+      title: "まぶた中央に、光を一点",
+      body: "すっと目に入る目元の流れを活かして、中央だけに軽いツヤを足します。",
+      steps: ["細かいパールを少量取る", "黒目の上へ指で一度置く", "左右を何度も見比べずに終える"],
+    },
+  },
+  photo: {
+    dim: {
+      title: "窓の正面へ、一歩だけ近づく",
+      body: "今の表情は変えず、光の届き方だけを少し整えます。",
+      steps: ["窓か明るい壁の正面へ移る", "肩を一度上げて、ふっと下ろす", "息を吐いたあとに一枚だけ撮る"],
+    },
+    bright: {
+      title: "窓から半歩離れて、光をやわらげる",
+      body: "顔を変えようとせず、強い光だけを少し穏やかにします。",
+      steps: ["窓から半歩だけ離れる", "直射ではなく明るい壁の方を向く", "明るさを触らず一枚だけ撮る"],
+    },
+    soft: {
+      title: "今の光のまま、一枚だけ撮る",
+      body: "光が穏やかに届いています。これ以上の調整は増やさなくて大丈夫です。",
+      steps: ["カメラを目線の少し上へ置く", "息をゆっくり吐く", "好きな表情で一枚だけ撮る"],
+    },
+  },
+};
+
+const moodClosers = {
+  calm: "大きく変えず、一か所だけで十分です。",
+  fresh: "いつもより少しだけ新鮮な気分を足せます。",
+  play: "正解より、今日好きだと思える方を選んでください。",
 };
 
 const recipes = {
@@ -187,7 +267,7 @@ let selectedMood = "calm";
 let selectedFocus = "random";
 let shownFocus = "hair";
 let recipeIndex = 0;
-let lightContext = null;
+let photoContext = null;
 let landmarkerPromise = null;
 let visionModulePromise = null;
 let stream = null;
@@ -213,13 +293,64 @@ function getRecipe() {
   return recipes[selectedMood][shownFocus][recipeIndex % recipes[selectedMood][shownFocus].length];
 }
 
-function renderSuggestion({ keepFocus = false } = {}) {
+function getFaceAwareRecipe() {
+  const keys = {
+    hair: photoContext.faceLine,
+    brow: photoContext.browFlow,
+    color: photoContext.eyeFeel,
+    photo: photoContext.light,
+  };
+  const recipe = faceAwareRecipes[shownFocus][keys[shownFocus]];
+  return { ...recipe, body: `${recipe.body}${moodClosers[selectedMood]}` };
+}
+
+function getPhotoInsight() {
+  if (!photoContext.reliable) {
+    return {
+      title: "この写真の雰囲気を、そのまま活かします",
+      body: "少し角度があるため細かな形は決めつけず、今の気分に合う一案を選びました。",
+    };
+  }
+
+  const insights = {
+    hair: {
+      soft: ["やわらかな輪郭が印象的です", "丸みを消さず、髪の空気感を少し足す提案を選びました。"],
+      sleek: ["すっきりした輪郭が印象的です", "縦の流れを活かし、顔まわりに横の動きを足す提案を選びました。"],
+      smooth: ["なめらかな輪郭が印象的です", "今のバランスを活かし、分け目だけを動かす提案を選びました。"],
+    },
+    brow: {
+      lifted: ["すっと上向く眉の流れが印象的です", "凛とした雰囲気を活かし、眉尻だけを整える提案を選びました。"],
+      gentle: ["穏やかな眉の流れが印象的です", "やわらかな雰囲気を活かし、毛流れを整える提案を選びました。"],
+      natural: ["自然な眉の流れが印象的です", "今の形を変えず、眉尻だけを丁寧にする提案を選びました。"],
+    },
+    color: {
+      open: ["やさしく広がる目元が印象的です", "その雰囲気を活かし、目頭に小さな光を足す提案を選びました。"],
+      focused: ["視線を引き込む目元が印象的です", "印象的な中心はそのままに、目尻へ色を足す提案を選びました。"],
+      clear: ["すっと目に入る目元が印象的です", "自然な流れを活かし、まぶた中央に光を足す提案を選びました。"],
+    },
+    photo: {
+      dim: ["落ち着いた光の雰囲気です", "表情はそのまま、光の方向だけを変える提案を選びました。"],
+      bright: ["明るく軽やかな光の雰囲気です", "光を少しやわらげ、表情を残しやすくする提案を選びました。"],
+      soft: ["やわらかな光が顔に届いています", "今の雰囲気を変えず、一枚だけ撮る提案を選びました。"],
+    },
+  };
+  const [title, body] = insights[shownFocus][{
+    hair: photoContext.faceLine,
+    brow: photoContext.browFlow,
+    color: photoContext.eyeFeel,
+    photo: photoContext.light,
+  }[shownFocus]];
+  return { title, body };
+}
+
+function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   if (!keepFocus) {
     shownFocus = selectedFocus === "random" ? chooseRandomFocus() : selectedFocus;
     recipeIndex = 0;
   }
 
-  const recipe = getRecipe();
+  const useFaceAwareRecipe = photoContext && recipeIndex % 2 === 0;
+  const recipe = useFaceAwareRecipe ? getFaceAwareRecipe() : getRecipe();
   els.result.dataset.mood = selectedMood;
   els.resultTitle.textContent = recipe.title;
   els.resultBody.textContent = recipe.body;
@@ -233,19 +364,31 @@ function renderSuggestion({ keepFocus = false } = {}) {
   els.timeMeta.textContent = "3分以内";
   els.toolMeta.textContent = "手持ちのものでOK";
 
+  if (photoContext) {
+    const insight = getPhotoInsight();
+    if (!useFaceAwareRecipe) {
+      insight.body = "この雰囲気を活かしつつ、別の方向から気軽に試せる一案です。";
+    }
+    els.insightTitle.textContent = insight.title;
+    els.insightBody.textContent = insight.body;
+    els.photoInsight.hidden = false;
+  } else {
+    els.photoInsight.hidden = true;
+  }
+
   const lightMessages = {
     dim: "写真の光は少し控えめでした。撮るなら窓の正面へ移るだけで十分です。",
     bright: "写真の光は少し強めでした。撮るなら窓から半歩離れるとやわらかくなります。",
     soft: "写真の光はちょうど穏やか。これ以上、明るさを調整しなくて大丈夫です。",
   };
-  els.lightTip.hidden = !lightContext;
-  els.lightTip.textContent = lightContext ? lightMessages[lightContext] : "";
+  els.lightTip.hidden = !photoContext;
+  els.lightTip.textContent = photoContext ? lightMessages[photoContext.light] : "";
 
   els.done.hidden = true;
   els.result.hidden = false;
   els.chooseThis.textContent = "これにする";
   els.chooseThis.disabled = false;
-  setStatus("");
+  if (!preserveStatus) setStatus("");
   els.result.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -373,24 +516,59 @@ function measureFaceLight(canvas, landmarks) {
   return "soft";
 }
 
+function readFaceContext(canvas, landmarks) {
+  const point = (index) => ({
+    x: landmarks[index].x * canvas.width,
+    y: landmarks[index].y * canvas.height,
+  });
+  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  const top = point(10);
+  const chin = point(152);
+  const leftCheek = point(234);
+  const rightCheek = point(454);
+  const nose = point(1);
+  const faceWidth = distance(leftCheek, rightCheek);
+  const faceHeight = distance(top, chin);
+  const faceCenterX = (leftCheek.x + rightCheek.x) / 2;
+  const yawOffset = Math.abs(nose.x - faceCenterX) / faceWidth;
+  const reliable = yawOffset < 0.11 && faceWidth > canvas.width * 0.16;
+
+  const eyeWidth = (distance(point(33), point(133)) + distance(point(362), point(263))) / 2;
+  const eyeSpacing = distance(point(133), point(362)) / eyeWidth;
+
+  const leftBrowLift = point(107).y - point(70).y;
+  const rightBrowLift = point(336).y - point(300).y;
+  const browLift = (leftBrowLift + rightBrowLift) / 2 / faceHeight;
+  const faceRatio = faceHeight / faceWidth;
+
+  return {
+    reliable,
+    light: measureFaceLight(canvas, landmarks),
+    faceLine: !reliable ? "smooth" : faceRatio >= 1.45 ? "sleek" : faceRatio <= 1.28 ? "soft" : "smooth",
+    eyeFeel: !reliable ? "clear" : eyeSpacing >= 1.15 ? "open" : eyeSpacing <= 0.9 ? "focused" : "clear",
+    browFlow: !reliable ? "natural" : browLift >= 0.025 ? "lifted" : browLift <= -0.005 ? "gentle" : "natural",
+  };
+}
+
 async function analyzePhoto(canvas) {
-  setStatus("写真の光を確認しています…");
+  setStatus("写真の雰囲気を確認しています…");
   try {
     const landmarker = await ensureLandmarker();
     const result = landmarker.detect(canvas);
     if (!result.faceLandmarks?.length) {
       setStatus("顔を見つけられませんでした。写真なしで提案を表示します。");
-      lightContext = null;
+      photoContext = null;
     } else {
-      lightContext = measureFaceLight(canvas, result.faceLandmarks[0]);
+      photoContext = readFaceContext(canvas, result.faceLandmarks[0]);
       setStatus("");
     }
-    renderSuggestion();
+    renderSuggestion({ preserveStatus: !photoContext });
   } catch (error) {
     console.error(error);
-    lightContext = null;
+    photoContext = null;
     setStatus("写真の確認ができなかったため、写真なしの提案を表示します。");
-    renderSuggestion();
+    renderSuggestion({ preserveStatus: true });
   }
 }
 
@@ -409,7 +587,7 @@ els.focusOptions.forEach((button) => {
 });
 
 els.noPhoto.addEventListener("click", () => {
-  lightContext = null;
+  photoContext = null;
   closeCameraStage();
   renderSuggestion();
 });
@@ -419,7 +597,7 @@ els.pickPhoto.addEventListener("click", () => els.file.click());
 els.shoot.addEventListener("click", drawVideoFrame);
 els.cancelPhoto.addEventListener("click", () => {
   closeCameraStage();
-  lightContext = null;
+  photoContext = null;
   renderSuggestion();
 });
 els.file.addEventListener("change", (event) => {
@@ -458,6 +636,20 @@ els.restart.addEventListener("click", () => {
 
 window.addEventListener("pagehide", stopCamera);
 
-if (new URLSearchParams(location.search).has("debug")) {
+const debugParams = new URLSearchParams(location.search);
+if (debugParams.has("debug")) {
   window.__faceGlowup = { renderSuggestion, loadFile };
+  const facePreview = debugParams.get("facePreview");
+  if (["soft", "sleek", "smooth"].includes(facePreview)) {
+    selectedFocus = "hair";
+    shownFocus = "hair";
+    photoContext = {
+      reliable: true,
+      light: "soft",
+      faceLine: facePreview,
+      eyeFeel: "clear",
+      browFlow: "natural",
+    };
+    renderSuggestion({ keepFocus: true });
+  }
 }

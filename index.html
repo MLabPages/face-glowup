@@ -59,7 +59,7 @@
         <button id="noPhoto" class="primary-action" type="button">写真なしで、ひと工夫を見る</button>
 
         <div class="optional-photo">
-          <p>写真を使うと、光に合わせた一言も添えます</p>
+          <p>写真を使うと、今の顔の雰囲気に合わせて提案します</p>
           <div class="photo-actions">
             <button id="startCam" class="text-action" type="button">カメラを使う</button>
             <button id="pickPhoto" class="text-action" type="button">写真を選ぶ</button>
@@ -83,6 +83,12 @@
       <p class="status" id="status" role="status" aria-live="polite"></p>
 
       <section class="result" id="result" hidden aria-labelledby="resultTitle">
+        <div class="photo-insight" id="photoInsight" hidden>
+          <span>写真から見えた雰囲気</span>
+          <strong id="insightTitle"></strong>
+          <p id="insightBody"></p>
+        </div>
+
         <div class="result-heading">
           <p class="result-kicker">TODAY'S ONE THING</p>
           <h2 id="resultTitle"></h2>
@@ -118,7 +124,7 @@
       </section>
 
       <footer class="footer">
-        <p>このアプリは顔を採点しません。顔立ちやパーツの良し悪しも判定しません。</p>
+        <p>写真では輪郭・目元・眉の流れを、提案を選ぶためだけに見ます。点数や欠点は出しません。</p>
       </footer>
     </main>
 
