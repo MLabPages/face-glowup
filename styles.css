@@ -454,6 +454,37 @@ h1 {
   font-weight: 800;
 }
 
+.technique-details {
+  display: grid;
+  margin: 0 26px 20px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.technique-row {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.technique-row + .technique-row {
+  border-top: 1px solid var(--line);
+}
+
+.technique-row span {
+  color: #607269;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.technique-row p {
+  margin: 0;
+  color: #3f4943;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
 .recipe-meta {
   display: flex;
   flex-wrap: wrap;
@@ -609,6 +640,16 @@ h1 {
   .light-tip {
     margin-right: 20px;
     margin-left: 20px;
+  }
+
+  .technique-details {
+    margin-right: 20px;
+    margin-left: 20px;
+  }
+
+  .technique-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .result-actions .primary-action.compact {

@@ -22,6 +22,9 @@ const els = {
   insightTitle: document.getElementById("insightTitle"),
   insightBody: document.getElementById("insightBody"),
   steps: document.getElementById("steps"),
+  techniqueLabel: document.getElementById("techniqueLabel"),
+  techniqueValue: document.getElementById("techniqueValue"),
+  moodTechnique: document.getElementById("moodTechnique"),
   timeMeta: document.getElementById("timeMeta"),
   toolMeta: document.getElementById("toolMeta"),
   lightTip: document.getElementById("lightTip"),
@@ -100,6 +103,130 @@ const faceAwareRecipes = {
       body: "光が穏やかに届いています。これ以上の調整は増やさなくて大丈夫です。",
       steps: ["カメラを目線の少し上へ置く", "息をゆっくり吐く", "好きな表情で一枚だけ撮る"],
     },
+  },
+};
+
+const faceAwareAlternates = {
+  hair: {
+    soft: {
+      title: "頬骨の下から、顔まわりを外へ逃がす",
+      body: "輪郭のやわらかさを残しつつ、下側に細い動きを作って軽さを加えます。",
+      steps: ["耳前の毛を1cm幅だけ取る", "頬骨の少し下から外向きに半回転させる", "毛束を指で二つに割り、線を細くする"],
+    },
+    sleek: {
+      title: "前髪を狭く取り、横へつなげる",
+      body: "縦のラインを活かしながら、額から頬へ横のつながりを作ります。",
+      steps: ["前髪の中央は薄く残す", "両端をこめかみ側へ流す", "頬骨付近の毛と自然につなげる"],
+    },
+    smooth: {
+      title: "片側だけ耳にかけて、線を見せる",
+      body: "なめらかな輪郭に左右差をひとつ加え、頑張りすぎない立体感を作ります。",
+      steps: ["好きな側だけを耳にかける", "反対側は頬に沿う毛を少し残す", "耳まわりの表面だけを薄く整える"],
+    },
+  },
+  brow: {
+    lifted: {
+      title: "眉頭を透かし、中央から眉尻へ濃淡を置く",
+      body: "上向きの流れはそのままに、色の重心を外側へ移して洗練さを足します。",
+      steps: ["眉頭1cmはブラシだけで整える", "中央から眉尻にパウダーを置く", "眉尻だけペンシルで細く閉じる"],
+    },
+    gentle: {
+      title: "眉下を1mmだけそろえ、上側は残す",
+      body: "穏やかな流れを変えず、下の輪郭だけを薄く整えて立体感を残します。",
+      steps: ["眉下の足りない部分だけを見つける", "淡いパウダーで1mm以内に埋める", "上側は描かず、毛流れを残す"],
+    },
+    natural: {
+      title: "眉マスカラを逆毛から、最後に毛流れへ",
+      body: "自然な形を変えず、一本ずつの質感と色だけを均一に整えます。",
+      steps: ["ブラシの液をティッシュで一度落とす", "中央から眉尻を逆毛方向へ薄く塗る", "眉頭から毛流れに沿って一度とかす"],
+    },
+  },
+  color: {
+    open: {
+      title: "上まぶたの内側に、淡い締め色を重ねる",
+      body: "やさしく広がる目元を活かし、内側にだけ奥行きを足して視線を集めます。",
+      steps: ["中間色を黒目の内側へ薄く置く", "目頭へ向けて境目をぼかす", "外側は明るさを残して終える"],
+    },
+    focused: {
+      title: "下まぶたの目尻1/3に、透ける色を置く",
+      body: "視線を引き込む目元を活かし、外側に短い色の余韻を作ります。",
+      steps: ["淡い色を細いブラシに取る", "下まぶたの目尻1/3だけに置く", "境目を指で一度なじませる"],
+    },
+    clear: {
+      title: "上はツヤ、下はマットで質感を分ける",
+      body: "自然な目元の流れを活かし、同系色の質感差だけで奥行きを作ります。",
+      steps: ["上まぶた中央へ細かいパールを置く", "下まぶたは同系色のマットを薄く使う", "色を増やさず、質感二つで終える"],
+    },
+  },
+  photo: {
+    dim: {
+      title: "白い壁を横に置き、影をやわらげる",
+      body: "落ち着いた光を残しながら、顔の片側へ反射光だけを足します。",
+      steps: ["窓の斜め前に立つ", "顔の暗い側へ白い壁や紙を置く", "露出は上げすぎず一枚撮る"],
+    },
+    bright: {
+      title: "窓に対して45度向き、立体感を残す",
+      body: "明るさは活かしつつ、正面からの強い光を少しだけ横へ逃がします。",
+      steps: ["窓に対して体を45度向ける", "顔だけをレンズへ少し戻す", "白飛びする時だけ露出を少し下げる"],
+    },
+    soft: {
+      title: "1.2m離れ、目線より5cm上から撮る",
+      body: "今のやわらかな光を保ったまま、距離と高さだけで自然な奥行きを作ります。",
+      steps: ["カメラと顔を1.2mほど離す", "レンズを目線より5cmほど上へ置く", "デジタルズームは使わず一枚撮る"],
+    },
+  },
+};
+
+const techniqueDetails = {
+  hair: {
+    soft: ["ドライヤーは根元へ下から3秒。バームは米粒半分を毛先だけに。", "アイロンは普段より10度低めで、耳前1cm幅だけに。"],
+    sleek: ["バームは米粒半分。頬より上にはつけず、毛先の線を残す。", "前髪用オイルは1滴未満。中央ではなく両端からなじませる。"],
+    smooth: ["根元用ミストは2プッシュまで。表面はさらっと残す。", "オイルは半滴を耳まわりだけ。反対側には足さない。"],
+  },
+  brow: {
+    lifted: ["ペンシルは眉尻2〜3mmだけ。仕上げに透明ジェルを薄く。", "眉頭は無色、中央から眉尻は淡いパウダーを一層だけ。"],
+    gentle: ["ジェルはブラシの片面だけに取り、眉頭から中央へ一度通す。", "眉下の描き足しは1mm以内。上側にはパウダーを重ねない。"],
+    natural: ["ペンシルは毛がない所に1〜2本。パウダーは境目をぼかす量だけ。", "眉マスカラは容器の口で液を落とし、各眉2ストローク以内。"],
+  },
+  color: {
+    open: ["パールは1mm程度の点。粒の細かいシャンパン系なら光だけが残る。", "締め色はブラシの片面に薄く。黒目の内側から目頭までに限定する。"],
+    focused: ["ラインは目尻から2〜3mm。黒より透けるブラウンやカラーが軽い。", "下まぶたは目尻1/3、幅2mm以内。粉を一度払ってから置く。"],
+    clear: ["パールは小指の爪半分。黒目の上から動かさず一点に。", "上は微細パール、下はマット。同系色で質感だけを変える。"],
+  },
+  photo: {
+    dim: ["窓から50〜100cm。露出補正は上げても+0.3程度まで。", "白い紙や壁は顔から30〜50cm。影を消し切らず薄く残す。"],
+    bright: ["窓から1m以上離れる。白飛びする時だけ露出を-0.3程度に。", "窓に対して45度、カメラは顔から80cm以上離す。"],
+    soft: ["カメラは顔から80cm以上。広角の歪みを避け、等倍で撮る。", "距離は約1.2m、高さは目線より約5cm上。等倍レンズを使う。"],
+  },
+};
+
+const genericTechniqueDetails = {
+  hair: "スタイリング剤は米粒半分から。足すなら表面ではなく毛先だけ。",
+  brow: "ブラシの余分な粉や液を一度落とし、描き足しは1mm以内から。",
+  color: "パールや色は小指の爪半分から。置く範囲を先に決めて広げすぎない。",
+  photo: "カメラは顔から80cm以上離し、広角ではなく等倍を基本に。",
+};
+
+const moodTechniqueTips = {
+  hair: {
+    calm: "表面はさらっと、毛先だけに薄いツヤを残す。",
+    fresh: "根元はドライ、毛先は軽いツヤにして質感差を作る。",
+    play: "色ピンや細いカチューシャは一点だけ。髪の動きは残す。",
+  },
+  brow: {
+    calm: "髪色と同程度か半トーン明るい、透ける色で整える。",
+    fresh: "髪色より1トーン明るい色を中央から眉尻へ薄く使う。",
+    play: "ピンクやオリーブなどの色は眉中央へ一層だけ重ねる。",
+  },
+  color: {
+    calm: "ベージュやグレージュの微細パールで、光だけを足す。",
+    fresh: "ピンクベージュやコーラルを薄く、ツヤは一か所に絞る。",
+    play: "ライラックや偏光カラーを一点だけ。ほかは同系色でまとめる。",
+  },
+  photo: {
+    calm: "彩度を上げず、影を少し残すと落ち着いた空気になる。",
+    fresh: "露出は+0.3以内、白い服や壁の反射で明るさを足す。",
+    play: "好きな色の小物を画面の端へ。顔だけを主役にしすぎない。",
   },
 };
 
@@ -290,7 +417,8 @@ function chooseRandomFocus(exclude = null) {
 }
 
 function getRecipe() {
-  return recipes[selectedMood][shownFocus][recipeIndex % recipes[selectedMood][shownFocus].length];
+  const recipe = recipes[selectedMood][shownFocus][recipeIndex % recipes[selectedMood][shownFocus].length];
+  return { ...recipe, technique: genericTechniqueDetails[shownFocus] };
 }
 
 function getFaceAwareRecipe() {
@@ -300,8 +428,15 @@ function getFaceAwareRecipe() {
     color: photoContext.eyeFeel,
     photo: photoContext.light,
   };
-  const recipe = faceAwareRecipes[shownFocus][keys[shownFocus]];
-  return { ...recipe, body: `${recipe.body}${moodClosers[selectedMood]}` };
+  const signal = keys[shownFocus];
+  const variants = [faceAwareRecipes[shownFocus][signal], faceAwareAlternates[shownFocus][signal]];
+  const variantIndex = recipeIndex % variants.length;
+  const recipe = variants[variantIndex];
+  return {
+    ...recipe,
+    body: `${recipe.body}${moodClosers[selectedMood]}`,
+    technique: techniqueDetails[shownFocus][signal][variantIndex],
+  };
 }
 
 function getPhotoInsight() {
@@ -349,7 +484,7 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
     recipeIndex = 0;
   }
 
-  const useFaceAwareRecipe = photoContext && recipeIndex % 2 === 0;
+  const useFaceAwareRecipe = Boolean(photoContext);
   const recipe = useFaceAwareRecipe ? getFaceAwareRecipe() : getRecipe();
   els.result.dataset.mood = selectedMood;
   els.resultTitle.textContent = recipe.title;
@@ -363,12 +498,12 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   );
   els.timeMeta.textContent = "3分以内";
   els.toolMeta.textContent = "手持ちのものでOK";
+  els.techniqueLabel.textContent = shownFocus === "photo" ? "距離・角度" : "量・質感";
+  els.techniqueValue.textContent = recipe.technique;
+  els.moodTechnique.textContent = moodTechniqueTips[shownFocus][selectedMood];
 
   if (photoContext) {
     const insight = getPhotoInsight();
-    if (!useFaceAwareRecipe) {
-      insight.body = "この雰囲気を活かしつつ、別の方向から気軽に試せる一案です。";
-    }
     els.insightTitle.textContent = insight.title;
     els.insightBody.textContent = insight.body;
     els.photoInsight.hidden = false;
