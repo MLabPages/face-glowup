@@ -16,6 +16,8 @@ const els = {
   cancelPhoto: document.getElementById("cancelPhoto"),
   status: document.getElementById("status"),
   result: document.getElementById("result"),
+  resultCategory: document.getElementById("resultCategory"),
+  resultMood: document.getElementById("resultMood"),
   resultTitle: document.getElementById("resultTitle"),
   resultBody: document.getElementById("resultBody"),
   photoInsight: document.getElementById("photoInsight"),
@@ -390,6 +392,17 @@ const recipes = {
 };
 
 const focusKeys = ["hair", "brow", "color", "photo"];
+const focusDisplay = {
+  hair: "HAIR / FACE LINE",
+  brow: "BROW DESIGN",
+  color: "EYE & COLOR",
+  photo: "PHOTO DIRECTION",
+};
+const moodDisplay = {
+  calm: "SOFT MOOD",
+  fresh: "FRESH MOOD",
+  play: "PLAY MOOD",
+};
 let selectedMood = "calm";
 let selectedFocus = "random";
 let shownFocus = "hair";
@@ -487,6 +500,9 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   const useFaceAwareRecipe = Boolean(photoContext);
   const recipe = useFaceAwareRecipe ? getFaceAwareRecipe() : getRecipe();
   els.result.dataset.mood = selectedMood;
+  els.result.dataset.focus = shownFocus;
+  els.resultCategory.textContent = focusDisplay[shownFocus];
+  els.resultMood.textContent = moodDisplay[selectedMood];
   els.resultTitle.textContent = recipe.title;
   els.resultBody.textContent = recipe.body;
   els.steps.replaceChildren(
@@ -521,7 +537,7 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
 
   els.done.hidden = true;
   els.result.hidden = false;
-  els.chooseThis.textContent = "これにする";
+  els.chooseThis.textContent = "今日これを試す";
   els.chooseThis.disabled = false;
   if (!preserveStatus) setStatus("");
   els.result.scrollIntoView({ behavior: "smooth", block: "start" });
