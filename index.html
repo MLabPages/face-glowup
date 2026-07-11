@@ -61,6 +61,12 @@
         </div>
 
         <div class="photo-entry">
+          <img
+            id="entryVisual"
+            class="photo-entry-visual"
+            src="assets/hair-editorial.jpg"
+            alt="ヘアスタイルの仕上がり例"
+          />
           <div class="photo-entry-copy">
             <span>PERSONAL RECIPE</span>
             <strong>今の顔から、似合わせ提案</strong>
@@ -91,11 +97,23 @@
       <p class="status" id="status" role="status" aria-live="polite"></p>
 
       <section class="result" id="result" hidden aria-labelledby="resultTitle">
-        <div class="result-heading">
-          <div class="result-meta">
-            <span id="resultCategory">HAIR / FACE LINE</span>
-            <span id="resultMood">SOFT MOOD</span>
+        <figure class="look-example">
+          <div class="example-media" id="exampleMedia">
+            <img id="exampleImage" alt="" />
+            <div class="example-focus" aria-hidden="true"></div>
+            <div class="result-meta">
+              <span id="resultCategory">HAIR / FACE LINE</span>
+              <span id="resultMood">SOFT MOOD</span>
+            </div>
+            <figcaption>
+              <span>VISUAL GUIDE</span>
+              <strong id="exampleCue"></strong>
+            </figcaption>
           </div>
+          <div class="example-labels" id="exampleLabels" aria-label="仕上がり例"></div>
+        </figure>
+
+        <div class="result-heading">
           <p class="result-kicker">YOUR GLOW NOTE</p>
           <h2 id="resultTitle"></h2>
           <p id="resultBody" class="result-body"></p>

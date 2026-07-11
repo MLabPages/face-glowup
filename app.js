@@ -4,6 +4,7 @@ const els = {
   moodOptions: [...document.querySelectorAll(".mood-option")],
   focusOptions: [...document.querySelectorAll(".focus-option")],
   noPhoto: document.getElementById("noPhoto"),
+  entryVisual: document.getElementById("entryVisual"),
   startCam: document.getElementById("startCam"),
   pickPhoto: document.getElementById("pickPhoto"),
   file: document.getElementById("file"),
@@ -16,6 +17,10 @@ const els = {
   cancelPhoto: document.getElementById("cancelPhoto"),
   status: document.getElementById("status"),
   result: document.getElementById("result"),
+  exampleMedia: document.getElementById("exampleMedia"),
+  exampleImage: document.getElementById("exampleImage"),
+  exampleCue: document.getElementById("exampleCue"),
+  exampleLabels: document.getElementById("exampleLabels"),
   resultCategory: document.getElementById("resultCategory"),
   resultMood: document.getElementById("resultMood"),
   resultTitle: document.getElementById("resultTitle"),
@@ -403,6 +408,56 @@ const moodDisplay = {
   fresh: "FRESH MOOD",
   play: "PLAY MOOD",
 };
+const visualGuides = {
+  hair: {
+    src: "assets/hair-editorial.jpg",
+    alt: "根元の空気感、顔まわりの外向きカール、片側の耳かけを並べたヘアスタイル例",
+    labels: ["根元の空気", "顔まわり", "片耳かけ"],
+  },
+  brow: {
+    src: "assets/brow-editorial.jpg",
+    alt: "眉尻、自然な毛流れ、透ける色を並べた眉メイク例",
+    labels: ["眉尻の線", "自然な毛流れ", "透ける色"],
+  },
+  color: {
+    src: "assets/eye-editorial.jpg",
+    alt: "目頭の光、目尻のカラー、まぶた中央のツヤを並べたアイメイク例",
+    labels: ["目頭の光", "目尻カラー", "中央のツヤ"],
+  },
+  photo: {
+    src: "assets/photo-editorial.jpg",
+    alt: "正面の窓光、45度の窓光、少し離れたカメラ位置を並べた撮影例",
+    labels: ["正面の窓光", "45度の光", "距離と高さ"],
+  },
+};
+const visualPanels = {
+  hair: {
+    soft: [0, 1],
+    sleek: [1, 1],
+    smooth: [0, 2],
+  },
+  brow: {
+    lifted: [0, 0],
+    gentle: [1, 1],
+    natural: [0, 1],
+  },
+  color: {
+    open: [0, 0],
+    focused: [1, 1],
+    clear: [2, 2],
+  },
+  photo: {
+    dim: [0, 0],
+    bright: [1, 1],
+    soft: [0, 2],
+  },
+};
+const genericVisualPanels = {
+  hair: [1, 0],
+  brow: [0, 1],
+  color: [0, 2],
+  photo: [0, 2],
+};
 let selectedMood = "calm";
 let selectedFocus = "random";
 let shownFocus = "hair";
@@ -422,6 +477,12 @@ function setRadioGroup(buttons, selected) {
     button.classList.toggle("is-selected", active);
     button.setAttribute("aria-checked", String(active));
   });
+}
+
+function updateEntryVisual() {
+  const focus = selectedFocus === "random" ? "hair" : selectedFocus;
+  els.entryVisual.src = visualGuides[focus].src;
+  els.entryVisual.alt = visualGuides[focus].alt;
 }
 
 function chooseRandomFocus(exclude = null) {
@@ -491,6 +552,35 @@ function getPhotoInsight() {
   return { title, body };
 }
 
+function getVisualPanel() {
+  const variantIndex = recipeIndex % 2;
+  if (!photoContext) return genericVisualPanels[shownFocus][variantIndex];
+  const signals = {
+    hair: photoContext.faceLine,
+    brow: photoContext.browFlow,
+    color: photoContext.eyeFeel,
+    photo: photoContext.light,
+  };
+  return visualPanels[shownFocus][signals[shownFocus]][variantIndex];
+}
+
+function renderVisualGuide() {
+  const guide = visualGuides[shownFocus];
+  const activePanel = getVisualPanel();
+  els.exampleImage.src = guide.src;
+  els.exampleImage.alt = guide.alt;
+  els.exampleCue.textContent = `${guide.labels[activePanel]}を見る`;
+  els.exampleMedia.style.setProperty("--active-panel", activePanel);
+  els.exampleLabels.replaceChildren(
+    ...guide.labels.map((label, index) => {
+      const item = document.createElement("span");
+      item.textContent = label;
+      item.classList.toggle("is-active", index === activePanel);
+      return item;
+    })
+  );
+}
+
 function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   if (!keepFocus) {
     shownFocus = selectedFocus === "random" ? chooseRandomFocus() : selectedFocus;
@@ -503,6 +593,7 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   els.result.dataset.focus = shownFocus;
   els.resultCategory.textContent = focusDisplay[shownFocus];
   els.resultMood.textContent = moodDisplay[selectedMood];
+  renderVisualGuide();
   els.resultTitle.textContent = recipe.title;
   els.resultBody.textContent = recipe.body;
   els.steps.replaceChildren(
@@ -734,6 +825,7 @@ els.focusOptions.forEach((button) => {
   button.addEventListener("click", () => {
     selectedFocus = button.dataset.focus;
     setRadioGroup(els.focusOptions, button);
+    updateEntryVisual();
   });
 });
 
