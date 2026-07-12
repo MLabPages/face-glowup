@@ -21,6 +21,10 @@ const els = {
   exampleImage: document.getElementById("exampleImage"),
   exampleCue: document.getElementById("exampleCue"),
   exampleLabels: document.getElementById("exampleLabels"),
+  intensityOptions: [...document.querySelectorAll("[data-intensity]")],
+  customizerCategory: document.getElementById("customizerCategory"),
+  customGroups: document.getElementById("customGroups"),
+  customNote: document.getElementById("customNote"),
   resultCategory: document.getElementById("resultCategory"),
   resultMood: document.getElementById("resultMood"),
   resultTitle: document.getElementById("resultTitle"),
@@ -458,11 +462,236 @@ const genericVisualPanels = {
   color: [0, 2],
   photo: [0, 2],
 };
+const lookRecipes = {
+  hair: [
+    {
+      title: "根元に空気を入れて、軽い立ち上がりを作る",
+      body: "トップの高さを少しだけ出して、髪全体に軽やかな余白を作ります。",
+      steps: ["分け目の根元をドライヤーで下から3秒温める", "指を左右へ小さく揺らして空気を入れる", "バームを米粒半分だけ毛先へなじませる"],
+      technique: "根元はドライ、毛先だけにツヤ。表面へオイルを足しすぎない。",
+    },
+    {
+      title: "顔まわりを外へ流して、線を細く見せる",
+      body: "頬骨の少し下から動きを作ると、顔まわりに抜け感が生まれます。",
+      steps: ["耳前の毛を1cm幅だけ取る", "頬骨の少し下から外へ半回転させる", "毛束を二つに割り、軽い線を残す"],
+      technique: "アイロンは普段より10度低め。巻くのは耳前の1cm幅だけで十分。",
+    },
+    {
+      title: "片側だけ耳にかけて、さりげない立体感を作る",
+      body: "左右を揃えすぎず、片側にだけ変化を作るスタイリングです。",
+      steps: ["好きな側の髪だけを耳にかける", "反対側は頬に沿う毛を少し残す", "耳まわりだけに半滴のオイルをなじませる"],
+      technique: "オイルは耳まわりだけ。反対側へ足さないと、片側の抜け感が残る。",
+    },
+  ],
+  brow: [
+    {
+      title: "眉尻を細くつないで、流れをきれいに残す",
+      body: "全体を描き直さず、眉尻だけを整えて輪郭を軽く仕上げます。",
+      steps: ["スクリューブラシで眉全体を一度とかす", "眉尻の足りない所へ1、2本だけ描く", "境目をブラシで一度ぼかす"],
+      technique: "ペンシルは眉尻2〜3mmだけ。先端まで塗りつぶさない。",
+    },
+    {
+      title: "毛流れをとかして、ふわっと質感を整える",
+      body: "形より質感を優先して、眉頭から中央へ自然な空気感を作ります。",
+      steps: ["ブラシの余分な液や粉を落とす", "眉頭から中央を斜め上へとかす", "眉尻は横へ一度流して終える"],
+      technique: "ジェルやマスカラは各眉2ストローク以内。根元に液をためない。",
+    },
+    {
+      title: "眉中央に透ける色を重ねて、気分を足す",
+      body: "形を変えず、色のニュアンスだけを足す遊び方です。",
+      steps: ["淡いピンクかオリーブをブラシへ少量取る", "眉中央へ薄く一層だけ重ねる", "眉尻はいつもの色のまま残す"],
+      technique: "色は眉中央だけ。眉頭と眉尻を同じ色にしないと透け感が残る。",
+    },
+  ],
+  color: [
+    {
+      title: "目頭に小さな光を置いて、視線を集める",
+      body: "細かいパールを一点だけ使い、目元に静かな明るさを足します。",
+      steps: ["微細パールを小指の爪半分だけ取る", "目頭へ点のように置く", "指で境目だけを一度なじませる"],
+      technique: "光は1mm程度。広げずに留めると、きれいな余白になる。",
+    },
+    {
+      title: "目尻に透ける色を足して、余韻を作る",
+      body: "目尻だけへ短い色を置き、色で遊びながら抜け感を保ちます。",
+      steps: ["好きな透け色を細いブラシへ取る", "目尻から2〜3mmだけ置く", "下まぶたの目尻1/3へ薄くつなげる"],
+      technique: "黒よりブラウンや透け色。粉は一度払ってから置く。",
+    },
+    {
+      title: "まぶた中央にツヤを一点だけ残す",
+      body: "質感差だけで、色を増やさずに今っぽい立体感を作ります。",
+      steps: ["細かいパールを黒目の上へ一度置く", "下まぶたは同系色のマットで薄く整える", "上のツヤは横へ広げずに終える"],
+      technique: "上はツヤ、下はマット。同系色で質感だけを変える。",
+    },
+  ],
+  photo: [
+    {
+      title: "窓の正面に立って、やわらかな光を使う",
+      body: "顔を作り込まず、正面からの自然光だけで明るさを整えます。",
+      steps: ["窓から50〜100cm離れて正面を向く", "肩を一度上げて、ふっと下ろす", "露出を動かしすぎず一枚だけ撮る"],
+      technique: "露出補正は上げても+0.3まで。白飛びしない明るさを残す。",
+    },
+    {
+      title: "窓に対して45度向き、立体感を残す",
+      body: "明るさは活かしながら、光を少し横から受けて奥行きを作ります。",
+      steps: ["体を窓に対して45度向ける", "顔だけをレンズへ少し戻す", "白飛びする時だけ露出を-0.3下げる"],
+      technique: "窓からは1m以上離れる。影を消し切らず薄く残す。",
+    },
+    {
+      title: "距離と高さだけを整えて、自然に撮る",
+      body: "加工やポーズを増やさず、カメラの距離と高さだけを使う方法です。",
+      steps: ["カメラと顔を1.2mほど離す", "レンズを目線より5cmほど上へ置く", "デジタルズームを使わず一枚撮る"],
+      technique: "広角を避け、等倍レンズを使う。距離があると輪郭が自然に残る。",
+    },
+  ],
+};
+const intensityTips = {
+  soft: "最初は見本の半量から。足すのは仕上がりを見てから一度だけ。",
+  standard: "見本の量と範囲を目安に、同じ場所へ一層だけ重ねる。",
+  bold: "量を増やすより、同じ場所の色かツヤをもう一層だけ重ねる。",
+};
+const partCustomizations = {
+  hair: {
+    label: "HAIR CUSTOM",
+    groups: [
+      {
+        key: "fringe",
+        label: "前髪",
+        options: [
+          { value: "thin", label: "薄め", tip: "前髪は中央を薄くし、両端だけをこめかみへ流す。" },
+          { value: "soft", label: "ふんわり", tip: "根元へ風を入れ、毛先は内外どちらか一方向にそろえる。" },
+          { value: "swept", label: "流す", tip: "分け目から目尻へ向かって、前髪の線を一度だけ流す。" },
+        ],
+      },
+      {
+        key: "part",
+        label: "分け目",
+        options: [
+          { value: "center", label: "中央", tip: "中央は根元だけをふわっと。毛先まで立ち上げない。" },
+          { value: "side", label: "横", tip: "横分けは普段の位置から1cmだけずらすと自然。" },
+          { value: "blur", label: "ぼかす", tip: "指でジグザグに取り、きっちりした線を残さない。" },
+        ],
+      },
+      {
+        key: "finish",
+        label: "質感",
+        options: [
+          { value: "dry", label: "さらっと", tip: "スタイリング剤は毛先の内側だけに使う。" },
+          { value: "semi", label: "セミツヤ", tip: "オイルは米粒半分を毛先から半分までに。" },
+          { value: "wet", label: "ツヤ", tip: "ツヤは顔まわり一束と毛先だけに絞る。" },
+        ],
+      },
+    ],
+  },
+  brow: {
+    label: "BROW CUSTOM",
+    groups: [
+      {
+        key: "shape",
+        label: "形",
+        options: [
+          { value: "soft", label: "やわらか", tip: "眉山を描き込みすぎず、パウダーでなだらかにつなぐ。" },
+          { value: "straight", label: "すっきり", tip: "眉下の中央だけを1mm以内に整え、眉尻を細く閉じる。" },
+          { value: "arch", label: "立体感", tip: "眉山は黒目の外側で軽く上げ、眉尻は下げすぎない。" },
+        ],
+      },
+      {
+        key: "flow",
+        label: "毛流れ",
+        options: [
+          { value: "airy", label: "ふんわり", tip: "眉頭を斜め上へ一度だけとかし、中央は触りすぎない。" },
+          { value: "natural", label: "自然", tip: "毛流れに沿って一度だけブラシを通す。" },
+          { value: "defined", label: "くっきり", tip: "中央から眉尻だけをジェルで固定し、眉頭は透かす。" },
+        ],
+      },
+      {
+        key: "color",
+        label: "色",
+        options: [
+          { value: "ash", label: "アッシュ", tip: "グレージュ系は眉尻から薄く置く。" },
+          { value: "neutral", label: "ニュートラル", tip: "髪色と同程度の色を中央から眉尻へ使う。" },
+          { value: "rose", label: "ローズ", tip: "ローズ系は眉中央へ一層だけ重ね、眉尻は元の色を残す。" },
+        ],
+      },
+    ],
+  },
+  color: {
+    label: "EYE & COLOR CUSTOM",
+    groups: [
+      {
+        key: "shade",
+        label: "色",
+        options: [
+          { value: "beige", label: "ベージュ", tip: "ベージュは陰影よりも光の質感を主役にする。" },
+          { value: "coral", label: "コーラル", tip: "コーラルは目尻か下まぶたのどちらか一方だけに置く。" },
+          { value: "lilac", label: "ライラック", tip: "ライラックは黒目の上か目尻のどちらか一点に絞る。" },
+        ],
+      },
+      {
+        key: "placement",
+        label: "置く場所",
+        options: [
+          { value: "inner", label: "目頭", tip: "目頭は1mmの点にして、横へ広げない。" },
+          { value: "outer", label: "目尻", tip: "目尻は2〜3mmだけ。下まぶたは目尻1/3までにする。" },
+          { value: "center", label: "中央", tip: "中央は黒目の上に一度置き、指で境目だけをぼかす。" },
+        ],
+      },
+      {
+        key: "texture",
+        label: "質感",
+        options: [
+          { value: "matte", label: "マット", tip: "マットは細いブラシで薄く重ね、境目を残さない。" },
+          { value: "satin", label: "サテン", tip: "サテンは上まぶた中央から外側へだけ伸ばす。" },
+          { value: "glow", label: "ツヤ", tip: "ツヤは上まぶたの一点だけ。下まぶたはマットにする。" },
+        ],
+      },
+    ],
+  },
+  photo: {
+    label: "PHOTO CUSTOM",
+    groups: [
+      {
+        key: "light",
+        label: "光",
+        options: [
+          { value: "front", label: "正面", tip: "正面光は窓から50〜100cm離れて使う。" },
+          { value: "side", label: "45度", tip: "45度の光は体だけを窓へ向け、顔は少しレンズへ戻す。" },
+          { value: "soft", label: "やわらか", tip: "レース越しの光か、白い壁の反射光を使う。" },
+        ],
+      },
+      {
+        key: "angle",
+        label: "高さ",
+        options: [
+          { value: "level", label: "目線", tip: "目線の高さは肩の力を抜くと自然に見える。" },
+          { value: "up", label: "少し上", tip: "少し上は目線より5cm程度。上げすぎない。" },
+          { value: "side", label: "少し横", tip: "少し横はカメラを顔の正面から10cmだけずらす。" },
+        ],
+      },
+      {
+        key: "scene",
+        label: "背景",
+        options: [
+          { value: "wall", label: "白い壁", tip: "白い壁は顔の暗い側に置くと反射光になる。" },
+          { value: "window", label: "窓辺", tip: "窓辺は背景を明るくしすぎず、室内を少し入れる。" },
+          { value: "object", label: "小物", tip: "小物は画面の端に一つだけ。顔と競合させない。" },
+        ],
+      },
+    ],
+  },
+};
 let selectedMood = "calm";
 let selectedFocus = "random";
 let shownFocus = "hair";
 let recipeIndex = 0;
 let photoContext = null;
+let selectedLookPanel = null;
+let selectedIntensity = "standard";
+let customizationState = {
+  hair: { fringe: "thin", part: "side", finish: "semi" },
+  brow: { shape: "soft", flow: "natural", color: "neutral" },
+  color: { shade: "beige", placement: "center", texture: "satin" },
+  photo: { light: "front", angle: "up", scene: "wall" },
+};
 let landmarkerPromise = null;
 let visionModulePromise = null;
 let stream = null;
@@ -493,6 +722,11 @@ function chooseRandomFocus(exclude = null) {
 function getRecipe() {
   const recipe = recipes[selectedMood][shownFocus][recipeIndex % recipes[selectedMood][shownFocus].length];
   return { ...recipe, technique: genericTechniqueDetails[shownFocus] };
+}
+
+function getLookRecipe() {
+  const recipe = lookRecipes[shownFocus][selectedLookPanel];
+  return { ...recipe, body: `${recipe.body}${moodClosers[selectedMood]}` };
 }
 
 function getFaceAwareRecipe() {
@@ -553,6 +787,7 @@ function getPhotoInsight() {
 }
 
 function getVisualPanel() {
+  if (selectedLookPanel != null) return selectedLookPanel;
   const variantIndex = recipeIndex % 2;
   if (!photoContext) return genericVisualPanels[shownFocus][variantIndex];
   const signals = {
@@ -569,26 +804,80 @@ function renderVisualGuide() {
   const activePanel = getVisualPanel();
   els.exampleImage.src = guide.src;
   els.exampleImage.alt = guide.alt;
-  els.exampleCue.textContent = `${guide.labels[activePanel]}を見る`;
+  els.exampleCue.textContent = `${guide.labels[activePanel]}を選択中`;
   els.exampleMedia.style.setProperty("--active-panel", activePanel);
   els.exampleLabels.replaceChildren(
     ...guide.labels.map((label, index) => {
-      const item = document.createElement("span");
+      const item = document.createElement("button");
+      item.type = "button";
       item.textContent = label;
+      item.dataset.lookIndex = String(index);
+      item.setAttribute("aria-pressed", String(index === activePanel));
       item.classList.toggle("is-active", index === activePanel);
       return item;
     })
   );
 }
 
-function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
+function renderIntensityOptions() {
+  els.intensityOptions.forEach((button) => {
+    const selected = button.dataset.intensity === selectedIntensity;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-checked", String(selected));
+  });
+}
+
+function getCustomizationSelection(group) {
+  return group.options.find((option) => option.value === customizationState[shownFocus][group.key]);
+}
+
+function renderPartCustomizer() {
+  const config = partCustomizations[shownFocus];
+  els.customizerCategory.textContent = config.label;
+  els.customGroups.replaceChildren(
+    ...config.groups.map((group) => {
+      const section = document.createElement("div");
+      section.className = "custom-group";
+      const label = document.createElement("span");
+      label.textContent = group.label;
+      const options = document.createElement("div");
+      options.className = "custom-options";
+      group.options.forEach((option) => {
+        const button = document.createElement("button");
+        const selected = customizationState[shownFocus][group.key] === option.value;
+        button.type = "button";
+        button.dataset.customKey = group.key;
+        button.dataset.customValue = option.value;
+        button.textContent = option.label;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        options.append(button);
+      });
+      section.append(label, options);
+      return section;
+    })
+  );
+  const chosen = config.groups.map(getCustomizationSelection);
+  els.customNote.textContent = `${chosen.map((option) => option.label).join(" × ")}。${chosen.map((option) => option.tip).join(" ")}`;
+}
+
+function customizationTips() {
+  return partCustomizations[shownFocus].groups.map((group) => getCustomizationSelection(group).tip).join(" ");
+}
+
+function renderTechniqueNote() {
+  els.moodTechnique.textContent = `${moodTechniqueTips[shownFocus][selectedMood]} ${intensityTips[selectedIntensity]} ${customizationTips()}`;
+}
+
+function renderSuggestion({ keepFocus = false, preserveStatus = false, scroll = true } = {}) {
   if (!keepFocus) {
     shownFocus = selectedFocus === "random" ? chooseRandomFocus() : selectedFocus;
     recipeIndex = 0;
+    selectedLookPanel = null;
   }
 
   const useFaceAwareRecipe = Boolean(photoContext);
-  const recipe = useFaceAwareRecipe ? getFaceAwareRecipe() : getRecipe();
+  const recipe = selectedLookPanel != null ? getLookRecipe() : useFaceAwareRecipe ? getFaceAwareRecipe() : getRecipe();
   els.result.dataset.mood = selectedMood;
   els.result.dataset.focus = shownFocus;
   els.resultCategory.textContent = focusDisplay[shownFocus];
@@ -607,10 +896,17 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   els.toolMeta.textContent = "手持ちのものでOK";
   els.techniqueLabel.textContent = shownFocus === "photo" ? "距離・角度" : "量・質感";
   els.techniqueValue.textContent = recipe.technique;
-  els.moodTechnique.textContent = moodTechniqueTips[shownFocus][selectedMood];
+  renderTechniqueNote();
+  renderIntensityOptions();
+  renderPartCustomizer();
 
   if (photoContext) {
-    const insight = getPhotoInsight();
+    const insight = selectedLookPanel != null
+      ? {
+          title: `好みの「${visualGuides[shownFocus].labels[selectedLookPanel]}」を選びました`,
+          body: "写真から見た今の雰囲気を活かしながら、選んだ仕上がりへ近づける手順に切り替えました。",
+        }
+      : getPhotoInsight();
     els.insightTitle.textContent = insight.title;
     els.insightBody.textContent = insight.body;
     els.photoInsight.hidden = false;
@@ -630,8 +926,11 @@ function renderSuggestion({ keepFocus = false, preserveStatus = false } = {}) {
   els.result.hidden = false;
   els.chooseThis.textContent = "今日これを試す";
   els.chooseThis.disabled = false;
+  els.another.textContent = selectedLookPanel != null ? "写真からのおすすめへ戻す" : "同じ特徴から別案";
   if (!preserveStatus) setStatus("");
-  els.result.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (scroll) {
+    els.result.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function stopCamera() {
@@ -829,6 +1128,28 @@ els.focusOptions.forEach((button) => {
   });
 });
 
+els.exampleLabels.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-look-index]");
+  if (!button) return;
+  selectedLookPanel = Number(button.dataset.lookIndex);
+  renderSuggestion({ keepFocus: true, scroll: false });
+});
+
+els.intensityOptions.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedIntensity = button.dataset.intensity;
+    renderSuggestion({ keepFocus: true, scroll: false });
+  });
+});
+
+els.customGroups.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-custom-key]");
+  if (!button) return;
+  customizationState[shownFocus][button.dataset.customKey] = button.dataset.customValue;
+  renderPartCustomizer();
+  renderTechniqueNote();
+});
+
 els.noPhoto.addEventListener("click", () => {
   photoContext = null;
   closeCameraStage();
@@ -850,6 +1171,11 @@ els.file.addEventListener("change", (event) => {
 });
 
 els.another.addEventListener("click", () => {
+  if (selectedLookPanel != null) {
+    selectedLookPanel = null;
+    renderSuggestion({ keepFocus: true });
+    return;
+  }
   if (selectedFocus === "random") {
     shownFocus = chooseRandomFocus(shownFocus);
     recipeIndex = 0;

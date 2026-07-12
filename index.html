@@ -106,12 +106,30 @@
               <span id="resultMood">SOFT MOOD</span>
             </div>
             <figcaption>
-              <span>VISUAL GUIDE</span>
+              <span>PICK YOUR LOOK</span>
               <strong id="exampleCue"></strong>
             </figcaption>
           </div>
-          <div class="example-labels" id="exampleLabels" aria-label="仕上がり例"></div>
+          <div class="example-labels" id="exampleLabels" aria-label="好きな仕上がり例を選ぶ"></div>
         </figure>
+
+        <div class="look-customizer" role="radiogroup" aria-label="仕上がりの強さ">
+          <span>仕上がりの強さ</span>
+          <div class="intensity-options">
+            <button type="button" role="radio" aria-checked="false" data-intensity="soft">控えめ</button>
+            <button type="button" role="radio" aria-checked="true" data-intensity="standard">ほどよく</button>
+            <button type="button" role="radio" aria-checked="false" data-intensity="bold">しっかり</button>
+          </div>
+        </div>
+
+        <section class="part-customizer" id="partCustomizer" aria-labelledby="customizerTitle">
+          <div class="customizer-heading">
+            <h3 id="customizerTitle">MAKE IT YOURS</h3>
+            <span id="customizerCategory"></span>
+          </div>
+          <div id="customGroups"></div>
+          <p id="customNote" class="custom-note"></p>
+        </section>
 
         <div class="result-heading">
           <p class="result-kicker">YOUR GLOW NOTE</p>
@@ -155,7 +173,7 @@
 
         <div class="result-actions">
           <button id="chooseThis" class="primary-action compact" type="button">今日これを試す</button>
-          <button id="another" class="text-action" type="button">同じ特徴から別案</button>
+          <button id="another" class="text-action" type="button">写真からのおすすめを見る</button>
         </div>
 
         <div class="stop-note">
